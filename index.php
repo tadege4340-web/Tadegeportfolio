@@ -10,11 +10,7 @@
     <style>
         html { scroll-behavior: smooth; }
         
-        /* =========================================
-           EXACT RGB GRADIENT BUTTON (From your image)
-           ========================================= */
         .btn-rgb {
-            /* Green to Yellow to Red */
             background: linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #ef4444 100%);
             background-size: 200% auto;
             box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
@@ -81,7 +77,6 @@
             </div>
 
             <div class="flex items-center space-x-4">
-                <!-- RGB Header Button -->
                 <a href="#contact" class="hidden sm:flex btn-rgb font-semibold px-5 py-2.5 rounded-xl text-sm transition items-center space-x-2">
                     <i class="fa-solid fa-paper-plane text-xs"></i>
                     <span>Get in Touch</span>
@@ -271,7 +266,6 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 
-                <!-- Project 1: Link goes to tadegesimsinu.onrender.com -->
                 <a href="https://tadegesimsinu.onrender.com" target="_blank" rel="noopener noreferrer" class="glass-card rounded-2xl p-8 flex flex-col justify-between hover:border-indigo-500/50 transition group block">
                     <div>
                         <div class="flex justify-between items-start mb-4">
@@ -295,7 +289,6 @@
                     </div>
                 </a>
 
-                <!-- Project 2 -->
                 <div class="glass-card rounded-2xl p-8 flex flex-col justify-between hover:border-indigo-500/50 transition group">
                     <div>
                         <div class="flex justify-between items-start mb-4">
@@ -451,6 +444,8 @@
         <p>© 2026 Tadege Yilkal. Engineered with modern web standards.</p>
     </footer>
 
+    <!-- Mobile Menu Toggle Script -->
     <script>
-        // Mobile Menu Toggle
-        const menuBtn =
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuIcon
