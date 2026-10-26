@@ -13,52 +13,30 @@
         html { scroll-behavior: smooth; }
 
         /* =========================================
-           1. UPGRADED FLOATING GLASS HEADER
+           1. FULL-WIDTH FLAT HEADER (Like Screenshot)
            ========================================= */
-        .glass-header {
-            /* Rich, deep translucent slate gradient */
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%);
-            
-            /* High-performance backdrop blur with color boost */
-            backdrop-filter: blur(20px) saturate(200%);
-            -webkit-backdrop-filter: blur(20px) saturate(200%);
-            
-            /* Double-layered border: subtle inner glow ring + vibrant top stroke */
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-top: 1px solid rgba(129, 140, 248, 0.4);
-            
-            /* Immersive depth shadows and ambient glow */
-            box-shadow: 
-                0 20px 50px -10px rgba(0, 0, 0, 0.7),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                0 0 30px -10px rgba(99, 102, 241, 0.25);
-            
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        /* Subtle interactive lift on scroll/hover */
-        .glass-header:hover {
-            box-shadow: 
-                0 25px 60px -10px rgba(0, 0, 0, 0.8),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                0 0 40px -5px rgba(168, 85, 247, 0.35);
-            border-color: rgba(129, 140, 248, 0.3);
+        .flat-header {
+            background-color: #0b0f19; /* Very dark, almost black */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 50;
+            transition: all 0.3s ease;
         }
 
         /* =========================================
-           2. AVATAR & LOGO GLOW
+           2. RGB GRADIENT LINE (Green -> Yellow -> Red)
            ========================================= */
-        .avatar-glow {
-            box-shadow: 0 0 20px rgba(129, 140, 248, 0.35);
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .group:hover .avatar-glow {
-            box-shadow: 0 0 30px rgba(168, 85, 247, 0.7);
-            transform: scale(1.08) rotate(2deg);
+        .rgb-line {
+            height: 3px;
+            width: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #ef4444 100%);
         }
 
         /* =========================================
-           3. NAV LINKS (Center-out animated gradient underline)
+           3. NAV LINKS
            ========================================= */
         .nav-link {
             position: relative;
@@ -66,47 +44,29 @@
             padding-bottom: 2px; 
             color: #cbd5e1;
         }
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            width: 0%;
-            height: 2px;
-            bottom: -2px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(90deg, #818cf8, #c084fc, #ec4899);
-            transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            border-radius: 4px;
-            box-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
-        }
         .nav-link:hover { 
             color: #ffffff; 
-            text-shadow: 0 0 12px rgba(129, 140, 248, 0.5);
         }
-        .nav-link:hover::after { width: 100%; }
 
         /* =========================================
-           4. GLOWING ACCENT BUTTON (Animated Gradient)
+           4. GLOWING ACCENT BUTTON
            ========================================= */
         .btn-glow {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            background: linear-gradient(135deg, #10b981 0%, #fbbf24 50%, #ef4444 100%);
             background-size: 200% auto; 
-            box-shadow: 
-                0 4px 20px rgba(99, 102, 241, 0.45),
-                inset 0 1px 0 rgba(255,255,255,0.3); 
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
             transition: all 0.4s ease;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
         }
         .btn-glow:hover {
             background-position: right center; 
-            box-shadow: 
-                0 8px 30px rgba(168, 85, 247, 0.7),
-                inset 0 1px 0 rgba(255,255,255,0.4);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
             transform: translateY(-2px);
         }
 
         /* =========================================
-           5. GLASS CARDS (For other sections)
+           5. GLASS CARDS
            ========================================= */
         .glass-card {
             background: rgba(17, 24, 39, 0.6);
@@ -115,86 +75,81 @@
             transition: all 0.3s ease;
         }
         .glass-card:hover {
-            border-color: rgba(129, 140, 248, 0.4);
+            border-color: rgba(16, 185, 129, 0.4);
             transform: translateY(-3px);
         }
         .glow-effect {
-            box-shadow: 0 0 30px -5px rgba(99, 102, 241, 0.35);
+            box-shadow: 0 0 30px -5px rgba(16, 185, 129, 0.25);
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white pt-24">
 
-    <!-- FLOATING ULTRA-MODERN HEADER -->
-    <header class="fixed top-3 left-0 w-full z-50 px-4 sm:px-8">
-        <div class="max-w-7xl mx-auto glass-header rounded-2xl px-5 py-3 flex justify-between items-center">
+    <!-- FIXED FULL-WIDTH HEADER -->
+    <header class="flat-header">
+        <div class="max-w-7xl mx-auto px-6 sm:px-8 py-4 flex justify-between items-center">
             
             <!-- Left: Logo Photo + Name -->
             <a href="#hero" class="flex items-center space-x-3 group">
-                <div class="relative">
-                    <img src="download.jpg" alt="Tadege Yilkal Profile" class="w-10 h-10 rounded-full object-cover border-2 border-indigo-400 avatar-glow">
-                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-slate-950 rounded-full animate-pulse"></span>
-                </div>
-                <div class="flex items-center text-lg sm:text-xl font-extrabold tracking-tight">
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Tadege</span>
-                    <span class="inline-block w-1.5"></span>
-                    <span class="text-slate-100 group-hover:text-white transition">Yilkal</span>
-                </div>
+                <img src="download.jpg" alt="Tadege Yilkal Profile" class="w-10 h-10 rounded-full object-cover border border-slate-700">
+                <span class="text-xl font-bold text-white tracking-tight">Tadege Yilkal</span>
             </a>
 
             <!-- Center: Desktop Navigation -->
-            <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-300">
-                <a href="#about" class="nav-link hover:text-indigo-300">About</a>
-                <a href="#skills" class="nav-link hover:text-indigo-300">Skills</a>
-                <a href="#projects" class="nav-link hover:text-indigo-300">Projects</a>
-                <a href="#contact" class="nav-link hover:text-indigo-300">Contact</a>
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300">
+                <a href="#about" class="nav-link">About</a>
+                <a href="#skills" class="nav-link">Skills</a>
+                <a href="#projects" class="nav-link">Projects</a>
+                <a href="#contact" class="nav-link">Contact</a>
             </nav>
 
             <!-- Right: Action Button & Mobile Toggle -->
             <div class="flex items-center space-x-3">
-                <a href="#contact" class="hidden sm:flex btn-glow text-white font-semibold px-5 py-2 rounded-xl text-sm transition items-center space-x-2">
-                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                <a href="#contact" class="hidden sm:flex btn-glow font-semibold px-5 py-2 rounded-lg text-sm transition items-center space-x-2">
                     <span>Get in Touch</span>
                 </a>
 
                 <!-- Mobile Menu Button -->
-                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2 bg-slate-900/80 border border-slate-800 rounded-xl" aria-label="Toggle Navigation">
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2 bg-slate-900 border border-slate-800 rounded-lg" aria-label="Toggle Navigation">
                     <i id="menu-icon" class="fa-solid fa-bars text-lg"></i>
                 </button>
             </div>
 
         </div>
 
+        <!-- The RGB Gradient Line -->
+        <div class="rgb-line"></div>
+
         <!-- Mobile Navigation Dropdown -->
-        <div id="mobile-menu" class="hidden md:hidden max-w-7xl mx-auto mt-2 glass-header rounded-2xl px-6 py-4 space-y-3 shadow-2xl">
-            <a href="#about" class="block text-slate-300 hover:text-indigo-400 font-medium py-1 transition">About</a>
-            <a href="#skills" class="block text-slate-300 hover:text-indigo-400 font-medium py-1 transition">Skills</a>
-            <a href="#projects" class="block text-slate-300 hover:text-indigo-400 font-medium py-1 transition">Projects</a>
-            <a href="#contact" class="block text-slate-300 hover:text-indigo-400 font-medium py-1 transition">Contact</a>
-            <a href="#contact" class="inline-block w-full text-center btn-glow text-white font-semibold px-4 py-2.5 rounded-xl text-sm mt-2">Get in Touch</a>
+        <div id="mobile-menu" class="hidden md:hidden bg-[#0b0f19] border-b border-slate-800 px-6 py-4 space-y-3 shadow-2xl absolute w-full left-0">
+            <a href="#about" class="block text-slate-300 hover:text-emerald-400 font-medium py-2 transition">About</a>
+            <a href="#skills" class="block text-slate-300 hover:text-emerald-400 font-medium py-2 transition">Skills</a>
+            <a href="#projects" class="block text-slate-300 hover:text-emerald-400 font-medium py-2 transition">Projects</a>
+            <a href="#contact" class="block text-slate-300 hover:text-emerald-400 font-medium py-2 transition">Contact</a>
+            <a href="#contact" class="block text-center btn-glow font-semibold px-4 py-2.5 rounded-lg text-sm mt-2">Get in Touch</a>
         </div>
     </header>
 
     <!-- HERO SECTION -->
-    <section id="hero" class="min-h-screen flex items-center justify-center pt-32 pb-20 px-6 relative overflow-hidden">
-        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-indigo-600/15 rounded-full blur-[140px] pointer-events-none"></div>
+    <section id="hero" class="min-h-[85vh] flex items-center justify-center pt-10 pb-20 px-6 relative overflow-hidden">
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-emerald-600/10 rounded-full blur-[140px] pointer-events-none"></div>
 
         <div class="max-w-4xl mx-auto text-center relative z-10">
             <!-- Hero Profile Photo -->
             <div class="mb-8 flex justify-center">
                 <div class="relative group">
-                    <div class="absolute -inset-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full blur opacity-70 group-hover:opacity-100 transition duration-500"></div>
+                    <div class="absolute -inset-1.5 bg-gradient-to-r from-emerald-500 via-yellow-500 to-red-500 rounded-full blur opacity-70 group-hover:opacity-100 transition duration-500"></div>
                     <img src="download.jpg" alt="Tadege Yilkal Hero Image" class="relative w-40 h-40 sm:w-48 sm:h-48 rounded-full object-cover border-2 border-slate-950 shadow-2xl">
                 </div>
             </div>
 
-            <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-indigo-950/90 border border-indigo-800/70 mb-6 text-indigo-300 text-xs sm:text-sm font-medium">
+            <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-900 border border-slate-800 mb-6 text-slate-300 text-xs sm:text-sm font-medium">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 Available for Full-Stack & Engineering Roles
             </div>
 
             <h1 class="text-4xl sm:text-7xl font-extrabold tracking-tight mb-6 text-slate-100">
-                Hi, I'm <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Tadege Yilkal</span>
+                Hi, I'm <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-yellow-400 to-red-400">Tadege Yilkal</span>
             </h1>
 
             <p class="text-xl text-slate-300 font-medium mb-4">
@@ -206,11 +161,11 @@
             </p>
 
             <div class="flex flex-wrap justify-center gap-4">
-                <a href="#projects" class="btn-glow text-white font-semibold px-7 py-3.5 rounded-xl transition flex items-center gap-2">
+                <a href="#projects" class="btn-glow font-semibold px-7 py-3.5 rounded-xl transition flex items-center gap-2">
                     <span>Explore My Projects</span>
                     <i class="fa-solid fa-arrow-right text-sm"></i>
                 </a>
-                <a href="#contact" class="bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 font-semibold px-7 py-3.5 rounded-xl transition flex items-center gap-2">
+                <a href="#contact" class="bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/80 font-semibold px-7 py-3.5 rounded-xl transition flex items-center gap-2">
                     <i class="fa-solid fa-paper-plane text-sm"></i>
                     <span>Contact Me</span>
                 </a>
@@ -243,7 +198,7 @@
                 <!-- Stats Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-slate-800/80">
                     <div class="flex items-center space-x-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-                        <div class="p-3 bg-indigo-950 rounded-lg text-indigo-400 border border-indigo-800/50">
+                        <div class="p-3 bg-slate-800 rounded-lg text-emerald-400 border border-slate-700">
                             <i class="fa-solid fa-layer-group text-xl"></i>
                         </div>
                         <div>
@@ -253,7 +208,7 @@
                     </div>
 
                     <div class="flex items-center space-x-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-                        <div class="p-3 bg-indigo-950 rounded-lg text-indigo-400 border border-indigo-800/50">
+                        <div class="p-3 bg-slate-800 rounded-lg text-emerald-400 border border-slate-700">
                             <i class="fa-solid fa-graduation-cap text-xl"></i>
                         </div>
                         <div>
@@ -263,7 +218,7 @@
                     </div>
 
                     <div class="flex items-center space-x-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-                        <div class="p-3 bg-indigo-950 rounded-lg text-indigo-400 border border-indigo-800/50">
+                        <div class="p-3 bg-slate-800 rounded-lg text-emerald-400 border border-slate-700">
                             <i class="fa-solid fa-code-branch text-xl"></i>
                         </div>
                         <div>
@@ -285,61 +240,61 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Skill Card 1: Frontend -->
                 <div class="glass-card rounded-2xl p-6 group">
-                    <div class="w-12 h-12 bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-400 mb-6 border border-indigo-800/50 group-hover:scale-110 transition">
+                    <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 mb-6 border border-slate-700 group-hover:scale-110 transition">
                         <i class="fa-solid fa-code text-xl"></i>
                     </div>
                     <h3 class="font-bold text-slate-100 text-lg mb-4">Frontend Development</h3>
                     <ul class="space-y-2.5 text-sm text-slate-300">
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>HTML5 & Semantic Markup</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>CSS3 & Tailwind CSS</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>JavaScript (ES6+)</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Responsive Web Design</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Interactive UI/UX Form Flow</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>HTML5 & Semantic Markup</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>CSS3 & Tailwind CSS</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>JavaScript (ES6+)</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Responsive Web Design</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Interactive UI/UX Form Flow</li>
                     </ul>
                 </div>
 
                 <!-- Skill Card 2: Backend & Database -->
                 <div class="glass-card rounded-2xl p-6 group">
-                    <div class="w-12 h-12 bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-400 mb-6 border border-indigo-800/50 group-hover:scale-110 transition">
+                    <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 mb-6 border border-slate-700 group-hover:scale-110 transition">
                         <i class="fa-solid fa-server text-xl"></i>
                     </div>
                     <h3 class="font-bold text-slate-100 text-lg mb-4">Backend & Databases</h3>
                     <ul class="space-y-2.5 text-sm text-slate-300">
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>PHP Scripting</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>MySQL Database Design</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Relational ER Diagrams</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Server Setup (XAMPP/Apache)</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>CRUD Operations & Security</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>PHP Scripting</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>MySQL Database Design</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Relational ER Diagrams</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Server Setup (XAMPP/Apache)</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>CRUD Operations & Security</li>
                     </ul>
                 </div>
 
                 <!-- Skill Card 3: AI & Data Science -->
                 <div class="glass-card rounded-2xl p-6 group">
-                    <div class="w-12 h-12 bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-400 mb-6 border border-indigo-800/50 group-hover:scale-110 transition">
+                    <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 mb-6 border border-slate-700 group-hover:scale-110 transition">
                         <i class="fa-solid fa-brain text-xl"></i>
                     </div>
                     <h3 class="font-bold text-slate-100 text-lg mb-4">Python & Data Science</h3>
                     <ul class="space-y-2.5 text-sm text-slate-300">
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Python Programming</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Pandas & Scikit-Learn</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Seaborn & Matplotlib</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>K-Nearest Neighbors (KNN)</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Rule-Based Expert Systems</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Python Programming</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Pandas & Scikit-Learn</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Seaborn & Matplotlib</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>K-Nearest Neighbors (KNN)</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Rule-Based Expert Systems</li>
                     </ul>
                 </div>
 
                 <!-- Skill Card 4: CS Engineering Fundamentals -->
                 <div class="glass-card rounded-2xl p-6 group">
-                    <div class="w-12 h-12 bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-400 mb-6 border border-indigo-800/50 group-hover:scale-110 transition">
+                    <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 mb-6 border border-slate-700 group-hover:scale-110 transition">
                         <i class="fa-solid fa-microchip text-xl"></i>
                     </div>
                     <h3 class="font-bold text-slate-100 text-lg mb-4">Core CS & Systems</h3>
                     <ul class="space-y-2.5 text-sm text-slate-300">
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Data Structures & Algorithms</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>OS CPU Scheduling & IPC</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>8086 Assembly Language</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>UML Systems Architecture</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-indigo-400"></i>Networking & Security Basics</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Data Structures & Algorithms</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>OS CPU Scheduling & IPC</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>8086 Assembly Language</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>UML Systems Architecture</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-angle-right text-emerald-500"></i>Networking & Security Basics</li>
                     </ul>
                 </div>
             </div>
@@ -349,55 +304,55 @@
     <!-- FEATURED PROJECTS SECTION -->
     <section id="projects" class="py-24 px-6 bg-slate-900/40 border-t border-slate-800/80">
         <div class="max-w-6xl mx-auto">
-            <h2 class="text-3xl sm:text-4xl font-bold text-center text-slate-100 mb-4">Featured Projects</h2>
+            <h2 class="text-3xl sm:text-4xl font-bold text-center text-slate-100 mb-4">MY Projects</h2>
             <p class="text-slate-400 text-center max-w-xl mx-auto mb-16">Demonstrating practical application in web architecture, backend engineering, and machine learning models.</p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- Project 1 -->
-                <div class="glass-card rounded-2xl p-8 flex flex-col justify-between group">
+                <a href="https://tadegesimsinu.onrender.com/" target="_blank" rel="noopener noreferrer" class="glass-card rounded-2xl p-8 flex flex-col justify-between group block">
                     <div>
                         <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-2xl font-bold text-slate-100 group-hover:text-indigo-400 transition">Student Information Management System</h3>
-                            <span class="text-xs bg-indigo-950 text-indigo-300 font-semibold px-3 py-1 rounded-full border border-indigo-800/50">Full-Stack Web</span>
+                            <h3 class="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">Student Information Management System</h3>
+                            <span class="text-xs bg-slate-800 text-emerald-300 font-semibold px-3 py-1 rounded-full border border-slate-700">Full-Stack Web</span>
                         </div>
                         <p class="text-slate-300 text-sm mb-6 leading-relaxed">
                             A robust web-based portal developed for managing student academic records. Features secure database authentication, search functionality, profile update forms, dynamic record rendering, and full database CRUD workflows using PHP and MySQL.
                         </p>
                         <ul class="text-xs text-slate-400 space-y-2 mb-6">
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-indigo-400"></i> Custom relational MySQL database architecture</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-indigo-400"></i> Interactive navigation and real-time form validation</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-indigo-400"></i> Responsive UI styled with custom CSS & HTML</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Custom relational MySQL database architecture</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Interactive navigation and real-time form validation</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Responsive UI styled with custom CSS & HTML</li>
                         </ul>
                     </div>
                     <div class="flex flex-wrap gap-2 pt-4 border-t border-slate-800">
-                        <span class="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-md border border-indigo-900">PHP</span>
-                        <span class="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-md border border-indigo-900">MySQL</span>
-                        <span class="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-md border border-indigo-900">JavaScript</span>
-                        <span class="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-md border border-indigo-900">HTML5/CSS3</span>
+                        <span class="text-xs font-mono text-emerald-300 bg-slate-800/80 px-3 py-1 rounded-md border border-slate-700">PHP</span>
+                        <span class="text-xs font-mono text-emerald-300 bg-slate-800/80 px-3 py-1 rounded-md border border-slate-700">MySQL</span>
+                        <span class="text-xs font-mono text-emerald-300 bg-slate-800/80 px-3 py-1 rounded-md border border-slate-700">JavaScript</span>
+                        <span class="text-xs font-mono text-emerald-300 bg-slate-800/80 px-3 py-1 rounded-md border border-slate-700">HTML5/CSS3</span>
                     </div>
-                </div>
+                </a>
 
                 <!-- Project 2 -->
                 <div class="glass-card rounded-2xl p-8 flex flex-col justify-between group">
                     <div>
                         <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-2xl font-bold text-slate-100 group-hover:text-indigo-400 transition">ML Data Preprocessing & KNN Classifier</h3>
-                            <span class="text-xs bg-indigo-950 text-indigo-300 font-semibold px-3 py-1 rounded-full border border-indigo-800/50">Data Science & AI</span>
+                            <h3 class="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition">ML Data Preprocessing & KNN Classifier</h3>
+                            <span class="text-xs bg-slate-800 text-emerald-300 font-semibold px-3 py-1 rounded-full border border-slate-700">Data Science & AI</span>
                         </div>
                         <p class="text-slate-300 text-sm mb-6 leading-relaxed">
                             An end-to-end data analysis pipeline built in Python. Implemented data cleaning, feature scaling, correlation analysis using Seaborn heatmaps, and classification using the K-Nearest Neighbors (KNN) algorithm with comprehensive accuracy evaluation.
                         </p>
                         <ul class="text-xs text-slate-400 space-y-2 mb-6">
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-indigo-400"></i> Automated data preprocessing and missing value handler</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-indigo-400"></i> Exploratory pairplot and heatmap visualizations</li>
-                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-indigo-400"></i> Precision, recall, and confusion matrix evaluation</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Automated data preprocessing and missing value handler</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Exploratory pairplot and heatmap visualizations</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Precision, recall, and confusion matrix evaluation</li>
                         </ul>
                     </div>
                     <div class="flex flex-wrap gap-2 pt-4 border-t border-slate-800">
-                        <span class="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-md border border-indigo-900">Python</span>
-                        <span class="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-md border border-indigo-900">Pandas</span>
-                        <span class="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-md border border-indigo-900">Scikit-Learn</span>
-                        <span class="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-md border border-indigo-900">Seaborn</span>
+                        <span class="text-xs font-mono text-emerald-300 bg-slate-800/80 px-3 py-1 rounded-md border border-slate-700">Python</span>
+                        <span class="text-xs font-mono text-emerald-300 bg-slate-800/80 px-3 py-1 rounded-md border border-slate-700">Pandas</span>
+                        <span class="text-xs font-mono text-emerald-300 bg-slate-800/80 px-3 py-1 rounded-md border border-slate-700">Scikit-Learn</span>
+                        <span class="text-xs font-mono text-emerald-300 bg-slate-800/80 px-3 py-1 rounded-md border border-slate-700">Seaborn</span>
                     </div>
                 </div>
             </div>
@@ -413,8 +368,8 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <!-- Direct Contact Cards -->
                 <div class="lg:col-span-5 space-y-6">
-                    <a href="tel:0928293370" class="glass-card p-6 rounded-2xl flex items-center space-x-4 hover:border-indigo-500/60 transition group block">
-                        <div class="w-12 h-12 bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-400 border border-indigo-800/50 group-hover:scale-110 transition shrink-0">
+                    <a href="tel:0928293370" class="glass-card p-6 rounded-2xl flex items-center space-x-4 hover:border-emerald-500/60 transition group block">
+                        <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 border border-slate-700 group-hover:scale-110 transition shrink-0">
                             <i class="fa-solid fa-phone text-lg"></i>
                         </div>
                         <div>
@@ -423,8 +378,8 @@
                         </div>
                     </a>
 
-                    <a href="https://t.me/tadege123" target="_blank" rel="noopener noreferrer" class="glass-card p-6 rounded-2xl flex items-center space-x-4 hover:border-indigo-500/60 transition group block">
-                        <div class="w-12 h-12 bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-400 border border-indigo-800/50 group-hover:scale-110 transition shrink-0">
+                    <a href="https://t.me/tadege123" target="_blank" rel="noopener noreferrer" class="glass-card p-6 rounded-2xl flex items-center space-x-4 hover:border-emerald-500/60 transition group block">
+                        <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 border border-slate-700 group-hover:scale-110 transition shrink-0">
                             <i class="fa-brands fa-telegram text-xl"></i>
                         </div>
                         <div>
@@ -433,13 +388,13 @@
                         </div>
                     </a>
 
-                    <a href="mailto:taadegeyilkal@gmail.com" class="glass-card p-6 rounded-2xl flex items-center space-x-4 hover:border-indigo-500/60 transition group block">
-                        <div class="w-12 h-12 bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-400 border border-indigo-800/50 group-hover:scale-110 transition shrink-0">
+                    <a href="mailto:taadegeyilkal@gmail.com" class="glass-card p-6 rounded-2xl flex items-center space-x-4 hover:border-emerald-500/60 transition group block">
+                        <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 border border-slate-700 group-hover:scale-110 transition shrink-0">
                             <i class="fa-solid fa-envelope text-lg"></i>
                         </div>
                         <div>
                             <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold block">Gmail</span>
-                            <span class="text-slate-200 font-medium text-sm">taadegeyilkal@gmail.com</span>
+                            <span class="text-slate-200 font-medium text-sm">tadegeyilkal@gmail.com</span>
                         </div>
                     </a>
                 </div>
@@ -451,22 +406,22 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-medium text-slate-400 mb-1">Your Name</label>
-                                <input type="text" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition">
+                                <input type="text" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 transition">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-400 mb-1">Your Email</label>
-                                <input type="email" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition">
+                                <input type="email" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 transition">
                             </div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Subject</label>
-                            <input type="text" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition">
+                            <input type="text" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 transition">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Message</label>
-                            <textarea rows="4" required placeholder="Write your message here..." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition"></textarea>
+                            <textarea rows="4" required placeholder="Write your message here..." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 transition"></textarea>
                         </div>
-                        <button type="submit" class="w-full btn-glow text-white font-semibold py-3.5 rounded-xl transition">
+                        <button type="submit" class="w-full btn-glow font-semibold py-3.5 rounded-xl transition">
                             Send Message
                         </button>
                     </form>
@@ -477,7 +432,7 @@
 
     <!-- FOOTER -->
     <footer class="py-8 border-t border-slate-800/80 text-center text-xs text-slate-500">
-        <p>© 2026 Tadege Yilkal. Engineered with modern web standards.</p>
+        <p style="color: red;background-color: greenyellow;">© 2026 Tadege Yilkal. Engineered with modern web standards.</p>
     </footer>
 
     <!-- MOBILE MENU SCRIPT -->
@@ -497,7 +452,6 @@
             }
         });
 
-        // Close menu when clicking links
         document.querySelectorAll('#mobile-menu a').forEach(link => {
             link.addEventListener('click', () => {
                 mobileMenu.classList.add('hidden');
