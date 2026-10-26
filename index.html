@@ -13,10 +13,10 @@
         html { scroll-behavior: smooth; }
 
         /* =========================================
-           1. FULL-WIDTH FLAT HEADER (Like Screenshot)
+           1. FULL-WIDTH FLAT HEADER
            ========================================= */
         .flat-header {
-            background-color: #0b0f19; /* Very dark, almost black */
+            background-color: #0b0f19; 
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             position: fixed;
             top: 0;
@@ -27,7 +27,7 @@
         }
 
         /* =========================================
-           2. RGB GRADIENT LINE (Green -> Yellow -> Red)
+           2. RGB GRADIENT LINE
            ========================================= */
         .rgb-line {
             height: 3px;
@@ -89,13 +89,11 @@
     <header class="flat-header">
         <div class="max-w-7xl mx-auto px-6 sm:px-8 py-4 flex justify-between items-center">
             
-            <!-- Left: Logo Photo + Name -->
             <a href="#hero" class="flex items-center space-x-3 group">
                 <img src="download.jpg" alt="Tadege Yilkal Profile" class="w-10 h-10 rounded-full object-cover border border-slate-700">
                 <span class="text-xl font-bold text-white tracking-tight">Tadege Yilkal</span>
             </a>
 
-            <!-- Center: Desktop Navigation -->
             <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300">
                 <a href="#about" class="nav-link">About</a>
                 <a href="#skills" class="nav-link">Skills</a>
@@ -103,13 +101,11 @@
                 <a href="#contact" class="nav-link">Contact</a>
             </nav>
 
-            <!-- Right: Action Button & Mobile Toggle -->
             <div class="flex items-center space-x-3">
                 <a href="#contact" class="hidden sm:flex btn-glow font-semibold px-5 py-2 rounded-lg text-sm transition items-center space-x-2">
                     <span>Get in Touch</span>
                 </a>
 
-                <!-- Mobile Menu Button -->
                 <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2 bg-slate-900 border border-slate-800 rounded-lg" aria-label="Toggle Navigation">
                     <i id="menu-icon" class="fa-solid fa-bars text-lg"></i>
                 </button>
@@ -117,10 +113,8 @@
 
         </div>
 
-        <!-- The RGB Gradient Line -->
         <div class="rgb-line"></div>
 
-        <!-- Mobile Navigation Dropdown -->
         <div id="mobile-menu" class="hidden md:hidden bg-[#0b0f19] border-b border-slate-800 px-6 py-4 space-y-3 shadow-2xl absolute w-full left-0">
             <a href="#about" class="block text-slate-300 hover:text-emerald-400 font-medium py-2 transition">About</a>
             <a href="#skills" class="block text-slate-300 hover:text-emerald-400 font-medium py-2 transition">Skills</a>
@@ -135,7 +129,6 @@
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-emerald-600/10 rounded-full blur-[140px] pointer-events-none"></div>
 
         <div class="max-w-4xl mx-auto text-center relative z-10">
-            <!-- Hero Profile Photo -->
             <div class="mb-8 flex justify-center">
                 <div class="relative group">
                     <div class="absolute -inset-1.5 bg-gradient-to-r from-emerald-500 via-yellow-500 to-red-500 rounded-full blur opacity-70 group-hover:opacity-100 transition duration-500"></div>
@@ -195,7 +188,6 @@
                     </div>
                 </div>
 
-                <!-- Stats Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-slate-800/80">
                     <div class="flex items-center space-x-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
                         <div class="p-3 bg-slate-800 rounded-lg text-emerald-400 border border-slate-700">
@@ -238,7 +230,6 @@
             <p class="text-slate-400 text-center max-w-xl mx-auto mb-16">A broad spectrum of technologies covering the full development lifecycle.</p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Skill Card 1: Frontend -->
                 <div class="glass-card rounded-2xl p-6 group">
                     <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 mb-6 border border-slate-700 group-hover:scale-110 transition">
                         <i class="fa-solid fa-code text-xl"></i>
@@ -253,7 +244,6 @@
                     </ul>
                 </div>
 
-                <!-- Skill Card 2: Backend & Database -->
                 <div class="glass-card rounded-2xl p-6 group">
                     <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 mb-6 border border-slate-700 group-hover:scale-110 transition">
                         <i class="fa-solid fa-server text-xl"></i>
@@ -268,7 +258,6 @@
                     </ul>
                 </div>
 
-                <!-- Skill Card 3: AI & Data Science -->
                 <div class="glass-card rounded-2xl p-6 group">
                     <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 mb-6 border border-slate-700 group-hover:scale-110 transition">
                         <i class="fa-solid fa-brain text-xl"></i>
@@ -283,7 +272,6 @@
                     </ul>
                 </div>
 
-                <!-- Skill Card 4: CS Engineering Fundamentals -->
                 <div class="glass-card rounded-2xl p-6 group">
                     <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 mb-6 border border-slate-700 group-hover:scale-110 transition">
                         <i class="fa-solid fa-microchip text-xl"></i>
@@ -308,7 +296,6 @@
             <p class="text-slate-400 text-center max-w-xl mx-auto mb-16">Demonstrating practical application in web architecture, backend engineering, and machine learning models.</p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Project 1 -->
                 <a href="https://tadegesimsinu.onrender.com/" target="_blank" rel="noopener noreferrer" class="glass-card rounded-2xl p-8 flex flex-col justify-between group block">
                     <div>
                         <div class="flex justify-between items-start mb-4">
@@ -332,7 +319,6 @@
                     </div>
                 </a>
 
-                <!-- Project 2 -->
                 <div class="glass-card rounded-2xl p-8 flex flex-col justify-between group">
                     <div>
                         <div class="flex justify-between items-start mb-4">
@@ -366,7 +352,6 @@
             <p class="text-slate-400 text-center max-w-xl mx-auto mb-16">I am open to full-stack software development roles, projects, and collaborations. Reach out directly!</p>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <!-- Direct Contact Cards -->
                 <div class="lg:col-span-5 space-y-6">
                     <a href="tel:0928293370" class="glass-card p-6 rounded-2xl flex items-center space-x-4 hover:border-emerald-500/60 transition group block">
                         <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 border border-slate-700 group-hover:scale-110 transition shrink-0">
@@ -388,7 +373,8 @@
                         </div>
                     </a>
 
-                    <a href="mailto:taadegeyilkal@gmail.com" class="glass-card p-6 rounded-2xl flex items-center space-x-4 hover:border-emerald-500/60 transition group block">
+                    <!-- FIXED EMAIL ADDRESS HERE -->
+                    <a href="mailto:tadegeyilkal@gmail.com" class="glass-card p-6 rounded-2xl flex items-center space-x-4 hover:border-emerald-500/60 transition group block">
                         <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-emerald-400 border border-slate-700 group-hover:scale-110 transition shrink-0">
                             <i class="fa-solid fa-envelope text-lg"></i>
                         </div>
@@ -399,10 +385,10 @@
                     </a>
                 </div>
 
-                <!-- Interactive Form -->
                 <div class="lg:col-span-7 glass-card p-8 rounded-2xl">
                     <h3 class="text-xl font-bold text-slate-100 mb-6">Send Me a Message</h3>
-                    <form action="mailto:taadegeyilkal@gmail.com" method="post" enctype="text/plain" class="space-y-4">
+                    <!-- FIXED FORM: Changed to a direct link, removed mailto: form method to fix security error -->
+                    <form onsubmit="event.preventDefault(); window.location.href='mailto:tadegeyilkal@gmail.com';" class="space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-medium text-slate-400 mb-1">Your Name</label>
@@ -432,7 +418,7 @@
 
     <!-- FOOTER -->
     <footer class="py-8 border-t border-slate-800/80 text-center text-xs text-slate-500">
-        <p style="color: red;background-color: greenyellow;">© 2026 Tadege Yilkal. Engineered with modern web standards.</p>
+        <p>© 2026 Tadege Yilkal. Engineered with modern web standards.</p>
     </footer>
 
     <!-- MOBILE MENU SCRIPT -->
