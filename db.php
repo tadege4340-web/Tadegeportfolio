@@ -1,5 +1,4 @@
 <?php
-// Force errors to show on screen
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -9,7 +8,6 @@ $DB_USER = getenv('DB_USER');
 $DB_PASS = getenv('DB_PASS');
 $DB_PORT = getenv('DB_PORT') ?: '3306'; 
 
-// Notice we removed the try/catch so PHP will print the exact error
 $pdo = new PDO(
     "mysql:host={$DB_HOST};port={$DB_PORT};dbname={$DB_NAME};charset=utf8mb4",
     $DB_USER,
