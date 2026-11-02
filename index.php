@@ -50,6 +50,15 @@
             transform: translateY(-3px);
         }
         .glow-effect { box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3); }
+        
+        /* Bell Wiggle Animation */
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(15deg); }
+            50% { transform: rotate(-15deg); }
+            75% { transform: rotate(10deg); }
+        }
+        .group:hover .fa-bell { animation: wiggle 0.5s ease-in-out; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white">
@@ -80,6 +89,14 @@
             </div>
 
             <div class="flex items-center space-x-4">
+                <!-- NEW: Admin Notification Bell -->
+                <a href="admin_messages.php" id="adminBell" class="hidden relative p-2 text-slate-300 hover:text-white transition group">
+                    <i class="fa-solid fa-bell text-xl"></i>
+                    <span id="notificationBadge" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-slate-900">
+                        0
+                    </span>
+                </a>
+
                 <a href="#contact" class="hidden sm:flex btn-rgb font-semibold px-5 py-2.5 rounded-xl text-sm transition items-center space-x-2">
                     <i class="fa-solid fa-paper-plane text-xs"></i>
                     <span>Get in Touch</span>
@@ -460,12 +477,4 @@
             };
             const icons = {
                 success: 'fa-circle-check text-emerald-400',
-                error:   'fa-circle-exclamation text-red-400',
-                info:    'fa-circle-info text-indigo-400'
-            };
-
-            toast.className = `flex items-start gap-3 ${styles[type]} border backdrop-blur-md rounded-xl px-5 py-4 shadow-2xl max-w-sm transition-all duration-500 translate-x-full opacity-0`;
-            toast.innerHTML = `
-                <i class="fa-solid ${icons[type]} text-lg mt-0.5 shrink-0"></i>
-                <div class="text-sm font-medium leading-relaxed">${message}</div>
-                <button class="ml-auto text-current/60 hover:text-current transition shrink-0" onclick
+               
