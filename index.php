@@ -81,7 +81,7 @@
                     <i class="fa-solid fa-paper-plane text-xs"></i>
                     <span>Get in Touch</span>
                 </a>
-                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2">
+                <button id="menu-btn" class="md:hidden text-slate-300 hover:text-white focus:outline-none p-2" aria-label="Toggle Navigation">
                     <i id="menu-icon" class="fa-solid fa-bars text-xl"></i>
                 </button>
             </div>
@@ -319,10 +319,10 @@
         <div class="max-w-5xl mx-auto">
             <h2 class="text-3xl sm:text-4xl font-bold text-center text-slate-100 mb-4">My CV</h2>
             <p class="text-slate-400 text-center max-w-xl mx-auto mb-12">
-                Download my résumé, view all uploaded CVs, or upload your own CV for me to review.
+                Download my résumé or view all uploaded CVs.
             </p>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="max-w-xl mx-auto">
                 <div class="glass-card rounded-2xl p-8 flex flex-col justify-between hover:border-indigo-500/50 transition">
                     <div>
                         <div class="w-14 h-14 bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-400 border border-indigo-800/50 mb-5">
@@ -343,30 +343,6 @@
                             <i class="fa-solid fa-folder-open"></i> View All Uploaded CVs
                         </a>
                     </div>
-                </div>
-
-                <div class="glass-card rounded-2xl p-8 hover:border-indigo-500/50 transition">
-                    <div class="w-14 h-14 bg-indigo-950 rounded-xl flex items-center justify-center text-indigo-400 border border-indigo-800/50 mb-5">
-                        <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-100 mb-2">Upload Your CV</h3>
-                    <p class="text-sm text-slate-400 mb-5">
-                        Send me your CV (PDF, DOC, DOCX — max 5 MB).
-                    </p>
-
-                    <form id="cvUploadForm" enctype="multipart/form-data" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Your CV File</label>
-                            <input type="file" name="cv" id="cvFile" accept=".pdf,.doc,.docx" required
-                                   class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 transition
-                                          file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white file:text-xs hover:file:bg-indigo-500 file:cursor-pointer">
-                        </div>
-                        <button type="submit"
-                                class="w-full btn-rgb font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-upload"></i> Upload CV
-                        </button>
-                        <div id="uploadStatus" class="text-sm text-center hidden"></div>
-                    </form>
                 </div>
             </div>
         </div>
@@ -461,4 +437,14 @@
             }
         });
 
-        document.querySelectorAll('#mobile-menu a').
+        // Close mobile menu when a link is clicked
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+                menuIcon.classList.add('fa-bars');
+                menuIcon.classList.remove('fa-xmark');
+            });
+        });
+    </script>
+</body>
+</html>
