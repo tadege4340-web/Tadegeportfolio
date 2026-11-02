@@ -54,6 +54,9 @@
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white">
 
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-24 right-6 z-[100] space-y-3"></div>
+
     <header class="fixed top-0 left-0 w-full z-50 separated-header">
         <div class="max-w-7xl mx-auto px-6 py-3.5 flex justify-between items-center">
             <a href="#hero" class="flex items-center space-x-3.5 group">
@@ -388,24 +391,24 @@
 
                 <div class="lg:col-span-7 glass-card p-8 rounded-2xl">
                     <h3 class="text-xl font-bold text-slate-100 mb-6">Send Me a Message</h3>
-                    <form action="mailto:taadegeyilkal@gmail.com" method="post" enctype="text/plain" class="space-y-4">
+                    <form id="contactForm" class="space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-medium text-slate-400 mb-1">Your Name</label>
-                                <input type="text" required placeholder="" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+                                <input type="text" id="senderName" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-400 mb-1">Your Email</label>
-                                <input type="email" required placeholder="" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+                                <input type="email" id="senderEmail" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500">
                             </div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Subject</label>
-                            <input type="text" required placeholder="" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+                            <input type="text" id="senderSubject" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-1">Message</label>
-                            <textarea rows="4" required placeholder="Write your message here..." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500"></textarea>
+                            <textarea id="senderMessage" rows="4" required placeholder="Write your message here..." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500"></textarea>
                         </div>
                         <button type="submit" class="w-full btn-rgb text-white font-semibold py-3.5 rounded-xl transition">
                             Send Message
@@ -421,7 +424,7 @@
     </footer>
 
     <script>
-        // Mobile Menu Toggle
+        // ===== Mobile Menu Toggle =====
         const menuBtn = document.getElementById('menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
         const menuIcon = document.getElementById('menu-icon');
@@ -437,13 +440,79 @@
             }
         });
 
-        // Close mobile menu when a link is clicked
         document.querySelectorAll('#mobile-menu a').forEach(link => {
             link.addEventListener('click', () => {
                 mobileMenu.classList.add('hidden');
                 menuIcon.classList.add('fa-bars');
                 menuIcon.classList.remove('fa-xmark');
             });
+        });
+
+        // ===== Toast Notification =====
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            const styles = {
+                success: 'bg-emerald-950/95 border-emerald-500/60 text-emerald-100',
+                error:   'bg-red-950/95 border-red-500/60 text-red-100',
+                info:    'bg-indigo-950/95 border-indigo-500/60 text-indigo-100'
+            };
+            const icons = {
+                success: 'fa-circle-check text-emerald-400',
+                error:   'fa-circle-exclamation text-red-400',
+                info:    'fa-circle-info text-indigo-400'
+            };
+
+            toast.className = `flex items-start gap-3 ${styles[type]} border backdrop-blur-md rounded-xl px-5 py-4 shadow-2xl max-w-sm transition-all duration-500 translate-x-full opacity-0`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type]} text-lg mt-0.5 shrink-0"></i>
+                <div class="text-sm font-medium leading-relaxed">${message}</div>
+                <button class="ml-auto text-current/60 hover:text-current transition shrink-0" onclick="this.parentElement.remove()">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full', 'opacity-0'));
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 500);
+            }, 5000);
+        }
+
+        // ===== Contact Form =====
+        document.getElementById('contactForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const name    = document.getElementById('senderName').value.trim();
+            const email   = document.getElementById('senderEmail').value.trim();
+            const subject = document.getElementById('senderSubject').value.trim();
+            const message = document.getElementById('senderMessage').value.trim();
+
+            if (!name || !email || !subject || !message) {
+                showToast('Please fill in all fields before sending.', 'error');
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showToast('Please enter a valid email address.', 'error');
+                return;
+            }
+
+            // 1. Notification on the website
+            showToast(`✅ Thanks ${name}! Your message is ready. Opening your email app to send to Tadege…`, 'success');
+
+            // 2. Build Gmail / mailto link
+            const mailtoLink = `mailto:taadegeyilkal@gmail.com`
+                + `?subject=${encodeURIComponent(subject)}`
+                + `&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`)}`;
+
+            // 3. Open the email app after a short delay
+            setTimeout(() => { window.location.href = mailtoLink; }, 800);
+
+            // 4. Reset form
+            this.reset();
         });
     </script>
 </body>
