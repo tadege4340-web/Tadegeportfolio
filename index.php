@@ -1,3 +1,7 @@
+<?php
+session_start();
+$isAdmin = !empty($_SESSION["admin"]);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,10 +10,10 @@
     <title>Tadege Yilkal | Full-Stack Software Engineer & CS Portfolio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         html { scroll-behavior: smooth; }
-        
+
         .btn-rgb {
             background: linear-gradient(90deg, #10b981 0%, #fbbf24 50%, #ef4444 100%);
             background-size: 200% auto;
@@ -33,14 +37,14 @@
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 4px 20px 0 rgba(79, 70, 229, 0.15);
         }
         .header-avatar-ring { box-shadow: 0 0 12px rgba(99, 102, 241, 0.6); }
-        
+
         .nav-link { position: relative; transition: color 0.3s ease; }
         .nav-link::after {
             content: ''; position: absolute; width: 0%; height: 2px; bottom: -4px; left: 0;
             background: linear-gradient(90deg, #6366f1, #a855f7); transition: width 0.3s ease; border-radius: 2px;
         }
         .nav-link:hover::after { width: 100%; }
-        
+
         .glass-card {
             background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.3s ease;
@@ -50,7 +54,7 @@
             transform: translateY(-3px);
         }
         .glow-effect { box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3); }
-        
+
         /* Bell Wiggle Animation */
         @keyframes wiggle {
             0%, 100% { transform: rotate(0deg); }
@@ -89,10 +93,13 @@
             </div>
 
             <div class="flex items-center space-x-4">
-                <!-- NEW: Admin Notification Bell -->
-                <a href="admin_messages.php" id="adminBell" class="hidden relative p-2 text-slate-300 hover:text-white transition group">
+                <!-- Admin Notification Bell (visible only when logged in as admin) -->
+                <a href="admin_messages.php" id="adminBell"
+                   class="<?= $isAdmin ? '' : 'hidden' ?> relative p-2 text-slate-300 hover:text-white transition group"
+                   aria-label="Messages">
                     <i class="fa-solid fa-bell text-xl"></i>
-                    <span id="notificationBadge" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-slate-900">
+                    <span id="notificationBadge"
+                          class="hidden absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-slate-900">
                         0
                     </span>
                 </a>
@@ -285,7 +292,7 @@
             <p class="text-slate-400 text-center max-w-xl mx-auto mb-16">Demonstrating practical application in web architecture, backend engineering, and machine learning models.</p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
+
                 <a href="https://tadegesimsinu.onrender.com" target="_blank" rel="noopener noreferrer" class="glass-card rounded-2xl p-8 flex flex-col justify-between hover:border-indigo-500/50 transition group block">
                     <div>
                         <div class="flex justify-between items-start mb-4">
@@ -477,4 +484,82 @@
             };
             const icons = {
                 success: 'fa-circle-check text-emerald-400',
-               
+                error:   'fa-circle-xmark text-red-400',
+                info:    'fa-bell text-indigo-400'
+            };
+
+            toast.className = `flex items-center gap-3 px-5 py-3 rounded-xl border shadow-xl backdrop-blur text-sm ${styles[type] || styles.info}`;
+
+            const icon = document.createElement('i');
+            icon.className = `fa-solid ${icons[type] || icons.info}`;
+
+            const text = document.createElement('span');
+            text.textContent = message; // textContent = safe from XSS
+
+            toast.append(icon, text);
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = 'opacity 0.4s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+
+        // ===== Admin notification badge =====
+        const IS_ADMIN = <?= $isAdmin ? 'true' : 'false' ?>;
+        const badge = document.getElementById('notificationBadge');
+        let lastSeenId = null; // newest message id we already know about
+
+        async function loadCount() {
+            try {
+                const res = await fetch('count_messages.php', { cache: 'no-store' });
+                const data = await res.json();
+
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+                badge.classList.toggle('hidden', data.count === 0);
+
+                if (data.latest) {
+                    const id = Number(data.latest.id);
+                    // Toast only for messages that arrive AFTER the page loaded
+                    if (lastSeenId !== null && id > lastSeenId) {
+                        showToast('New message from ' + data.latest.name + ': ' + data.latest.subject, 'info');
+                    }
+                    lastSeenId = id;
+                }
+            } catch (err) {
+                console.error('Notification error:', err);
+            }
+        }
+
+        if (IS_ADMIN) {
+            loadCount();
+            setInterval(loadCount, 5000); // check every 5 seconds
+        }
+
+        // ===== Contact form -> PHP =====
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('save_message.php', { method: 'POST', body: new FormData(form) });
+                const data = await res.json();
+
+                if (data.ok) {
+                    showToast('Message sent successfully!', 'success');
+                    form.reset();
+                } else {
+                    showToast(data.error || 'Could not send message.', 'error');
+                }
+            } catch (err) {
+                showToast('Network error. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
