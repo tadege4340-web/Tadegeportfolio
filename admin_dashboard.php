@@ -1,13 +1,19 @@
 
 <?php
+// IMPORTANT: Save this file using UTF-8 (without BOM).
+// There must be no spaces or blank lines before this opening PHP tag.
+
 require_once __DIR__ . "/db.php";
 
-// Keep errors hidden from website visitors.
 ini_set("display_errors", "0");
 ini_set("log_errors", "1");
 error_reporting(E_ALL);
 
-// Confirm the session.
+// Verify admin session before producing any HTML.
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
 if (empty($_SESSION["admin"])) {
     header("Location: admin_login.php");
     exit;
@@ -16,28 +22,22 @@ if (empty($_SESSION["admin"])) {
 try {
     error_log("ADMIN DASHBOARD: Session verified.");
 
-    // Messages count.
+    // Get total messages.
     $totalMessages = (int) $pdo->query(
         "SELECT COUNT(*) FROM contact_messages"
     )->fetchColumn();
 
-    error_log("ADMIN DASHBOARD: Total messages loaded.");
-
-    // Unread messages count.
+    // Get unread messages.
     $unreadMessages = (int) $pdo->query(
         "SELECT COUNT(*) FROM contact_messages WHERE is_read = 0"
     )->fetchColumn();
 
-    error_log("ADMIN DASHBOARD: Unread messages loaded.");
-
-    // Total CV count.
+    // Get total uploaded CV documents.
     $totalCVs = (int) $pdo->query(
         "SELECT COUNT(*) FROM cv_uploads"
     )->fetchColumn();
 
-    error_log("ADMIN DASHBOARD: Total CVs loaded.");
-
-    // Published CV count.
+    // Get publicly available CV documents.
     $publishedCVs = (int) $pdo->query(
         "SELECT COUNT(*) FROM cv_uploads WHERE is_public = 1"
     )->fetchColumn();
@@ -61,7 +61,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard | Portfolio</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -93,22 +93,30 @@ try {
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <p class="text-slate-400 text-sm">Total Messages</p>
-            <p class="text-3xl font-bold mt-2"><?= $totalMessages ?></p>
+            <p class="text-3xl font-bold mt-2">
+                <?= htmlspecialchars((string)$totalMessages) ?>
+            </p>
         </div>
 
         <div class="bg-slate-900 border border-indigo-500/40 rounded-2xl p-6">
             <p class="text-slate-400 text-sm">Unread Notifications</p>
-            <p class="text-3xl font-bold text-indigo-400 mt-2"><?= $unreadMessages ?></p>
+            <p class="text-3xl font-bold text-indigo-400 mt-2">
+                <?= htmlspecialchars((string)$unreadMessages) ?>
+            </p>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <p class="text-slate-400 text-sm">Total CVs</p>
-            <p class="text-3xl font-bold mt-2"><?= $totalCVs ?></p>
+            <p class="text-3xl font-bold mt-2">
+                <?= htmlspecialchars((string)$totalCVs) ?>
+            </p>
         </div>
 
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <p class="text-slate-400 text-sm">Published CVs</p>
-            <p class="text-3xl font-bold text-green-400 mt-2"><?= $publishedCVs ?></p>
+            <p class="text-3xl font-bold text-green-400 mt-2">
+                <?= htmlspecialchars((string)$publishedCVs) ?>
+            </p>
         </div>
 
     </div>
@@ -122,7 +130,7 @@ try {
                 <h3 class="text-xl font-bold">Notifications</h3>
 
                 <span class="bg-indigo-600 text-white rounded-full px-3 py-1 text-sm">
-                    <?= $unreadMessages ?> New
+                    <?= htmlspecialchars((string)$unreadMessages) ?> New
                 </span>
             </div>
 
@@ -158,5 +166,6 @@ try {
     </div>
 
 </main>
+
 </body>
 </html>
