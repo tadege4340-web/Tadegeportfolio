@@ -6,7 +6,10 @@ require_once __DIR__ . "/vendor/autoload.php";
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 
-// Validate file ID
+// ============================================
+// 1. VALIDATE FILE ID
+// ============================================
+
 $id = filter_input(INPUT_GET, "id", FILTER_VALIDATE_INT);
 
 if (!$id || $id < 1) {
@@ -14,16 +17,22 @@ if (!$id || $id < 1) {
     exit("Invalid file ID.");
 }
 
-// Find file in database
+// ============================================
+// 2. GET FILE INFORMATION FROM DATABASE
+// ============================================
+
 try {
     $stmt = $pdo->prepare(
         "SELECT * FROM cv_uploads WHERE id = ? LIMIT 1"
     );
+
     $stmt->execute([$id]);
     $cv = $stmt->fetch(PDO::FETCH_ASSOC);
 
 } catch (PDOException $e) {
+
     error_log("CV database error: " . $e->getMessage());
+
     http_response_code(500);
     exit("Could not retrieve the requested file.");
 }
@@ -33,7 +42,10 @@ if (!$cv) {
     exit("File not found in database.");
 }
 
-// Check permissions
+// ============================================
+// 3. CHECK USER PERMISSIONS
+// ============================================
+
 $isAdmin = !empty($_SESSION["admin"]);
 
 if (!$isAdmin && (int)$cv["is_public"] !== 1) {
@@ -41,18 +53,40 @@ if (!$isAdmin && (int)$cv["is_public"] !== 1) {
     exit("You do not have permission to access this file.");
 }
 
-// Validate stored filename
-$storedName = $cv["file_name"];
+// ============================================
+// 4. GET SUPABASE STORAGE KEY
+// ============================================
 
-if (
-    !is_string($storedName) ||
-    !preg_match('/\A[a-f0-9]{40}\.[a-z0-9]{1,10}\z/i', $storedName)
-) {
-    http_response_code(400);
-    exit("Invalid stored filename.");
+// Use storage_key first.
+// Fall back to file_name for older records.
+
+$storedName = trim((string)($cv["storage_key"] ?? ""));
+
+if ($storedName === "") {
+    $storedName = trim((string)$cv["file_name"]);
 }
 
-// Allowed MIME types
+// Allow filenames containing spaces, parentheses
+// and Unicode characters.
+//
+// Reject path separators and control characters.
+
+if (
+    $storedName === "" ||
+    strlen($storedName) > 255 ||
+    preg_match('//u', $storedName) !== 1 ||
+    str_contains($storedName, "/") ||
+    str_contains($storedName, "\\") ||
+    preg_match('/[\x00-\x1F\x7F]/', $storedName)
+) {
+    http_response_code(400);
+    exit("Invalid storage filename.");
+}
+
+// ============================================
+// 5. VALIDATE MIME TYPE
+// ============================================
+
 $allowedMimeTypes = [
     "application/pdf",
     "application/msword",
@@ -87,7 +121,10 @@ if (!in_array($mimeType, $allowedMimeTypes, true)) {
     exit("Unsupported file type.");
 }
 
-// Original filename
+// ============================================
+// 6. ORIGINAL FILENAME
+// ============================================
+
 $originalName = basename(
     str_replace("\\", "/", $cv["original_name"])
 );
@@ -98,10 +135,13 @@ $originalName = preg_replace(
     $originalName
 );
 
-// Download option
-$download = isset($_GET["download"]) && $_GET["download"] === "1";
+// ============================================
+// 7. DOWNLOAD AND PREVIEW SETTINGS
+// ============================================
 
-// Browser preview formats
+$download = isset($_GET["download"]) &&
+             $_GET["download"] === "1";
+
 $previewTypes = [
     "application/pdf",
     "image/jpeg",
@@ -113,18 +153,30 @@ $previewTypes = [
 
 $canPreview = in_array($mimeType, $previewTypes, true);
 
-// Preview unavailable page
+// ============================================
+// 8. PREVIEW NOT AVAILABLE PAGE
+// ============================================
+
 if (!$download && !$canPreview) {
 
-    $downloadUrl = "cv_file.php?id=" . (int)$cv["id"] . "&download=1";
+    $downloadUrl = "cv_file.php?id=" .
+                   (int)$cv["id"] . "&download=1";
+
     ?>
+
     <!DOCTYPE html>
     <html lang="en">
+
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1.0">
+
         <title>Preview Not Available</title>
+
         <script src="https://cdn.tailwindcss.com"></script>
+
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </head>
@@ -140,8 +192,8 @@ if (!$download && !$canPreview) {
             </h1>
 
             <p class="text-slate-400 mb-3">
-                This file format cannot be displayed in your browser.
-                Please download it to view it.
+                This file format cannot be displayed directly
+                in your browser. Please download it to view it.
             </p>
 
             <p class="text-white font-semibold break-words mb-6">
@@ -152,71 +204,109 @@ if (!$download && !$canPreview) {
                class="inline-block bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl font-bold">
 
                 <i class="fa-solid fa-download mr-2"></i>
+
                 Download File
+
             </a>
 
             <div class="mt-5">
+
                 <a href="<?= $isAdmin ? 'admin_uploaded_cvs.php' : 'index.php#cv' ?>"
                    class="text-slate-400 hover:text-white text-sm">
 
                     <i class="fa-solid fa-arrow-left mr-1"></i>
+
                     <?= $isAdmin ? 'Back to Uploaded Files' : 'Back to Portfolio' ?>
+
                 </a>
+
             </div>
 
         </div>
 
     </body>
     </html>
+
     <?php
     exit;
 }
 
-// Supabase Storage configuration
+// ============================================
+// 9. SUPABASE STORAGE CONFIGURATION
+// ============================================
+
 $endpoint = getenv("SUPABASE_S3_ENDPOINT");
 $region = getenv("SUPABASE_S3_REGION");
 $accessKey = getenv("SUPABASE_S3_ACCESS_KEY");
 $secretKey = getenv("SUPABASE_S3_SECRET_KEY");
 $bucket = getenv("SUPABASE_S3_BUCKET");
 
-if (!$endpoint || !$region || !$accessKey || !$secretKey || !$bucket) {
+if (
+    !$endpoint ||
+    !$region ||
+    !$accessKey ||
+    !$secretKey ||
+    !$bucket
+) {
+
     error_log("Supabase Storage environment variables are missing.");
+
     http_response_code(500);
     exit("File storage is not configured correctly.");
 }
 
-// Connect to Supabase Storage
+// ============================================
+// 10. CONNECT TO SUPABASE STORAGE
+// ============================================
+
 try {
 
     $s3 = new S3Client([
         "version" => "latest",
+
         "region" => $region,
+
         "endpoint" => $endpoint,
+
         "use_path_style_endpoint" => true,
+
         "credentials" => [
             "key" => $accessKey,
             "secret" => $secretKey
         ],
+
         "signature_version" => "v4"
     ]);
 
-    // Retrieve file from Supabase
+    // ========================================
+    // 11. GET FILE FROM SUPABASE
+    // ========================================
+
     $result = $s3->getObject([
         "Bucket" => $bucket,
         "Key" => $storedName
     ]);
 
     $body = $result["Body"];
-    $fileSize = $result["ContentLength"];
 
-    // Clear output buffers
+    $fileSize = $result["ContentLength"] ?? null;
+
+    // ========================================
+    // 12. CLEAR OUTPUT BUFFERS
+    // ========================================
+
     while (ob_get_level() > 0) {
         ob_end_clean();
     }
 
-    // Prepare response headers
+    // ========================================
+    // 13. SEND RESPONSE HEADERS
+    // ========================================
+
     header("X-Content-Type-Options: nosniff");
+
     header("Cache-Control: private, no-store");
+
     header("Content-Type: " . $mimeType);
 
     if ($fileSize !== null) {
@@ -234,13 +324,18 @@ try {
     );
 
     header(
-        "Content-Disposition: " . $disposition .
+        "Content-Disposition: " .
+        $disposition .
         '; filename="' . $safeFilename . '"' .
         "; filename*=UTF-8''" . rawurlencode($originalName)
     );
 
-    // Send file contents to browser
+    // ========================================
+    // 14. SEND FILE CONTENTS
+    // ========================================
+
     echo $body->getContents();
+
     exit;
 
 } catch (AwsException $e) {
@@ -253,17 +348,23 @@ try {
     $statusCode = $e->getStatusCode();
 
     if ($statusCode === 404) {
+
         http_response_code(404);
+
         exit("File not found in Supabase Storage.");
     }
 
     http_response_code(500);
+
     exit("Could not retrieve the file from storage.");
 
 } catch (Throwable $e) {
 
-    error_log("CV file error: " . $e->getMessage());
+    error_log(
+        "CV file error: " . $e->getMessage()
+    );
 
     http_response_code(500);
+
     exit("An unexpected error occurred while opening the file.");
 }
