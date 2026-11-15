@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . "/db.php";
 
@@ -12,23 +11,15 @@ if (!$id || $id < 1) {
 
 // Find file in database
 try {
-    $stmt = $pdo->prepare("
-        SELECT *
-        FROM cv_uploads
-        WHERE id = ?
-        LIMIT 1
-    ");
-
+    $stmt = $pdo->prepare("SELECT * FROM cv_uploads WHERE id = ? LIMIT 1");
     $stmt->execute([$id]);
     $cv = $stmt->fetch(PDO::FETCH_ASSOC);
-
 } catch (PDOException $e) {
     error_log("CV viewing error: " . $e->getMessage());
     http_response_code(500);
     exit("Could not retrieve the requested file.");
 }
 
-// Check file exists in database
 if (!$cv) {
     http_response_code(404);
     exit("File not found in database.");
@@ -45,10 +36,8 @@ if (!$isAdmin && (int)$cv["is_public"] !== 1) {
 // Validate stored filename
 $storedName = $cv["file_name"];
 
-if (
-    !is_string($storedName) ||
-    !preg_match('/\A[a-f0-9]{40}\.[a-z0-9]{1,10}\z/i', $storedName)
-) {
+if (!is_string($storedName) ||
+    !preg_match('/\A[a-f0-9]{40}\.[a-z0-9]{1,10}\z/i', $storedName)) {
     http_response_code(400);
     exit("Invalid stored filename.");
 }
@@ -57,6 +46,7 @@ if (
 $filePath = __DIR__ . "/uploads/cvs/" . $storedName;
 
 if (!is_file($filePath) || !is_readable($filePath)) {
+    error_log("CV file missing on server: " . $filePath);
     http_response_code(404);
     exit("The uploaded file is missing from the server.");
 }
@@ -97,19 +87,12 @@ if (!in_array($mimeType, $allowedMimeTypes, true)) {
 }
 
 // Original filename
-$originalName = basename(
-    str_replace("\\", "/", $cv["original_name"])
-);
-
-$originalName = preg_replace(
-    '/[\x00-\x1F\x7F]/',
-    '_',
-    $originalName
-);
+$originalName = basename(str_replace("\\", "/", $cv["original_name"]));
+$originalName = preg_replace('/[\x00-\x1F\x7F]/', '_', $originalName);
 
 $download = isset($_GET["download"]) && $_GET["download"] === "1";
 
-// Formats supported for browser preview
+// Formats the browser can preview
 $previewTypes = [
     "application/pdf",
     "image/jpeg",
@@ -119,15 +102,12 @@ $previewTypes = [
     "image/bmp"
 ];
 
-// ZIP, TIFF and office documents may not preview in every browser
 $canPreview = in_array($mimeType, $previewTypes, true);
 
-// If user clicks View for an unsupported format,
-// show a page explaining that download is available.
+// View clicked for a format that cannot be previewed
 if (!$download && !$canPreview) {
 
     $downloadUrl = "cv_file.php?id=" . (int)$cv["id"] . "&download=1";
-
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -135,48 +115,38 @@ if (!$download && !$canPreview) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Preview Not Available</title>
-
         <script src="https://cdn.tailwindcss.com"></script>
-
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        >
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </head>
-
     <body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-5">
 
         <div class="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
 
             <i class="fa-solid fa-file-circle-exclamation text-6xl text-yellow-400 mb-6"></i>
 
-            <h1 class="text-2xl font-bold mb-3">
-             
-            </h1>  YOU CAN READ AND SEE
+            <h1 class="text-2xl font-bold mb-3">Preview Not Available</h1>
 
             <p class="text-slate-400 mb-3">
-                This file format cannot be displayed directly in your browser so dawnload and see or read it.
+                This file format cannot be displayed in your browser.
+                Please download it to read or view it.
             </p>
 
             <p class="text-white font-semibold break-words mb-6">
                 <?= htmlspecialchars($originalName, ENT_QUOTES, "UTF-8") ?>
             </p>
 
-            <a
-                href="<?= htmlspecialchars($downloadUrl, ENT_QUOTES, "UTF-8") ?>"
-                class="inline-block bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl font-bold"
-            >
+            <a href="<?= htmlspecialchars($downloadUrl, ENT_QUOTES, "UTF-8") ?>"
+               class="inline-block bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl font-bold">
                 <i class="fa-solid fa-download mr-2"></i>
                 Download File
             </a>
 
             <div class="mt-5">
-                <a
-                    href="admin_uploaded_cvs.php"
-                    class="text-slate-400 hover:text-white text-sm"
-                >
+                <a href="<?= $isAdmin ? 'admin_uploaded_cvs.php' : 'index.php#cv' ?>"
+                   class="text-slate-400 hover:text-white text-sm">
                     <i class="fa-solid fa-arrow-left mr-1"></i>
-                    Back to Uploaded Files
+                    <?= $isAdmin ? 'Back to Uploaded Files' : 'Back to Portfolio' ?>
                 </a>
             </div>
 
@@ -185,24 +155,22 @@ if (!$download && !$canPreview) {
     </body>
     </html>
     <?php
-
     exit;
 }
 
-// Prevent MIME sniffing
+// Send the file
+while (ob_get_level() > 0) {
+    ob_end_clean();
+}
+
 header("X-Content-Type-Options: nosniff");
 header("Cache-Control: private, no-store");
 header("Content-Type: " . $mimeType);
 header("Content-Length: " . filesize($filePath));
 
-// Send inline preview or forced download
 $disposition = ($download || !$canPreview) ? "attachment" : "inline";
 
-$safeFilename = preg_replace(
-    '/[^A-Za-z0-9._-]/',
-    '_',
-    $originalName
-);
+$safeFilename = preg_replace('/[^A-Za-z0-9._-]/', '_', $originalName);
 
 header(
     "Content-Disposition: " . $disposition .

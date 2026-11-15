@@ -1,21 +1,28 @@
 <?php
 /**
  * Database connection for local MAMP and Render deployment (Aiven MySQL).
- * On Render, set DB_HOST, DB_PORT, DB_NAME, DB_USER and DB_PASSWORD
- * in the service Environment settings. Never commit real credentials.
+ *
+ * On Render, set these in the service Environment settings:
+ *   DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+ * Never commit real credentials.
  */
 
-// Start the session before any HTML, whitespace, or other output.
-if (session_status() !== PHP_SESSION_ACTIVE) {
+// 1) Hide PHP warnings from visitors FIRST, so they never leak into pages or JSON.
+ini_set("display_errors", "0");
+ini_set("display_startup_errors", "0");
+error_reporting(E_ALL);
+
+// 2) Start the session only if no output was sent yet.
+if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
     $isHttps = (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off")
         || (isset($_SERVER["HTTP_X_FORWARDED_PROTO"])
             && strtolower((string) $_SERVER["HTTP_X_FORWARDED_PROTO"]) === "https");
 
     session_set_cookie_params([
         "lifetime" => 0,
-        "path" => "/",
-        "domain" => "",
-        "secure" => $isHttps,
+        "path"     => "/",
+        "domain"   => "",
+        "secure"   => $isHttps,
         "httponly" => true,
         "samesite" => "Lax"
     ]);
@@ -23,25 +30,22 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// Do not display PHP warnings or database details to public visitors.
-ini_set("display_errors", "0");
-ini_set("display_startup_errors", "0");
-error_reporting(E_ALL);
+// 3) Read configuration. Local MAMP defaults are used only when variables are absent.
+function env_or(string $key, string $default): string
+{
+    $value = getenv($key);
+    return ($value === false || trim($value) === "") ? $default : trim($value);
+}
 
-// Read deployment credentials from environment variables.
-// Local MAMP defaults are used only when environment variables are absent.
-$host     = getenv("DB_HOST");
-$port     = getenv("DB_PORT");
-$dbname   = getenv("DB_NAME");
-$username = getenv("DB_USER");
-$password = getenv("DB_PASSWORD");
+$isOnline = trim((string) getenv("DB_HOST")) !== "";
 
-if ($host === false || $host === "")         $host = "127.0.0.1";
-if ($port === false || $port === "")         $port = "3306";
-if ($dbname === false || $dbname === "")     $dbname = "tadege_portfolio";
-if ($username === false || $username === "") $username = "root";
-if ($password === false || $password === "") $password = "root";
+$host     = env_or("DB_HOST", "127.0.0.1");
+$port     = env_or("DB_PORT", "3306");
+$dbname   = env_or("DB_NAME", "tadege_portfolio");
+$username = env_or("DB_USER", "root");
+$password = env_or("DB_PASSWORD", "root");
 
+// 4) Connect.
 try {
     $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
 
@@ -52,11 +56,17 @@ try {
         PDO::ATTR_TIMEOUT            => 10
     ];
 
-    // Use SSL only online (Aiven requires it). Local MAMP stays without SSL.
-    $caFile = __DIR__ . "/ca.pem";
-    if (getenv("DB_HOST") && file_exists($caFile)) {
-        $options[PDO::MYSQL_ATTR_SSL_CA] = $caFile;
-        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+    // SSL only online (Aiven requires it). Local MAMP stays without SSL.
+    if ($isOnline) {
+        $caFile = __DIR__ . "/ca.pem";
+
+        if (is_file($caFile)) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = $caFile;
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+        } else {
+            error_log("ca.pem not found, connecting without certificate check.");
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        }
     }
 
     $pdo = new PDO($dsn, $username, $password, $options);
@@ -65,5 +75,5 @@ try {
     // Full details go only to the server log, never to the browser.
     error_log("Portfolio database connection failed: " . $e->getMessage());
     http_response_code(500);
-    exit("Database connection failed. Please check the database service and its environment variables.");
+    exit("Database connection failed. Please try again later.");
 }
