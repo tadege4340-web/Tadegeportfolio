@@ -5,45 +5,53 @@
  * Uses Aiven MySQL online.
  */
 
+// --------------------------------------------------
+// 1. PHP ERROR CONFIGURATION
+// --------------------------------------------------
+
 ini_set("display_errors", "0");
 ini_set("display_startup_errors", "0");
 ini_set("log_errors", "1");
+
 error_reporting(E_ALL);
 
 // --------------------------------------------------
-// 1. SESSION INITIALIZATION
+// 2. SESSION INITIALIZATION
 // --------------------------------------------------
 
 if (session_status() === PHP_SESSION_NONE) {
 
+    // Check whether output was already sent.
     if (headers_sent($sentFile, $sentLine)) {
         error_log(
-            "SESSION ERROR: Headers already sent in {$sentFile} on line {$sentLine}."
+            "SESSION ERROR: Output already sent in " .
+            $sentFile . " on line " . $sentLine
         );
 
         http_response_code(500);
         exit("Session initialization failed.");
     }
 
-    // Configure session storage.
+    // Use the system temporary directory.
     $sessionPath = sys_get_temp_dir();
 
     if (!is_dir($sessionPath) || !is_writable($sessionPath)) {
         error_log(
-            "SESSION ERROR: Session directory is not writable: " . $sessionPath
+            "SESSION ERROR: Session directory is not writable: " .
+            $sessionPath
         );
 
         http_response_code(500);
         exit("Session storage is unavailable.");
     }
 
-    // session_save_path() returns the PREVIOUS path.
-    // Verify the current path instead of checking its return value.
-    session_save_path($sessionPath);
+    // Configure session storage before starting the session.
+    if (!session_save_path($sessionPath) &&
+        session_save_path() !== $sessionPath) {
 
-    if (session_save_path() !== $sessionPath) {
         error_log(
-            "SESSION ERROR: Failed to configure session path: " . $sessionPath
+            "SESSION ERROR: Could not configure session path: " .
+            $sessionPath
         );
 
         http_response_code(500);
@@ -52,12 +60,16 @@ if (session_status() === PHP_SESSION_NONE) {
 
     // Detect HTTPS behind Render's reverse proxy.
     $isHttps =
-        (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off") ||
+        (
+            !empty($_SERVER["HTTPS"]) &&
+            $_SERVER["HTTPS"] !== "off"
+        ) ||
         (
             isset($_SERVER["HTTP_X_FORWARDED_PROTO"]) &&
-            strtolower((string) $_SERVER["HTTP_X_FORWARDED_PROTO"]) === "https"
+            strtolower($_SERVER["HTTP_X_FORWARDED_PROTO"]) === "https"
         );
 
+    // Configure secure session cookies.
     session_set_cookie_params([
         "lifetime" => 0,
         "path" => "/",
@@ -67,9 +79,10 @@ if (session_status() === PHP_SESSION_NONE) {
         "samesite" => "Lax"
     ]);
 
+    // Start PHP session.
     if (!session_start()) {
         error_log(
-            "SESSION ERROR: session_start() failed. Save path: " .
+            "SESSION ERROR: session_start() failed. Path: " .
             session_save_path()
         );
 
@@ -78,6 +91,7 @@ if (session_status() === PHP_SESSION_NONE) {
     }
 }
 
+// Verify session status.
 if (session_status() !== PHP_SESSION_ACTIVE) {
     error_log("SESSION ERROR: Session is not active.");
 
@@ -86,7 +100,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 // --------------------------------------------------
-// 2. ENVIRONMENT VARIABLE HELPER
+// 3. ENVIRONMENT VARIABLE HELPER
 // --------------------------------------------------
 
 function env_or(string $key, string $default): string
@@ -101,7 +115,7 @@ function env_or(string $key, string $default): string
 }
 
 // --------------------------------------------------
-// 3. DATABASE CONFIGURATION
+// 4. DATABASE CONFIGURATION
 // --------------------------------------------------
 
 $isOnline = trim((string) getenv("DB_HOST")) !== "";
@@ -113,7 +127,7 @@ $username = env_or("DB_USER", "root");
 $password = env_or("DB_PASSWORD", "root");
 
 // --------------------------------------------------
-// 4. MYSQL CONNECTION
+// 5. MYSQL CONNECTION
 // --------------------------------------------------
 
 try {
@@ -127,6 +141,7 @@ try {
         PDO::ATTR_TIMEOUT => 10
     ];
 
+    // Aiven SSL configuration.
     if ($isOnline) {
 
         $caFile = __DIR__ . "/ca.pem";
@@ -147,6 +162,7 @@ try {
         }
     }
 
+    // Connect to MySQL.
     $pdo = new PDO(
         $dsn,
         $username,
