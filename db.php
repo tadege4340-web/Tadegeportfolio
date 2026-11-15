@@ -1,10 +1,10 @@
+
 <?php
 /**
  * Database connection for MAMP and Render.
  * Uses Aiven MySQL online.
  */
 
-// Hide errors from website visitors; write them to server logs.
 ini_set("display_errors", "0");
 ini_set("display_startup_errors", "0");
 ini_set("log_errors", "1");
@@ -16,31 +16,41 @@ error_reporting(E_ALL);
 
 if (session_status() === PHP_SESSION_NONE) {
 
-    // Check whether output was sent before starting the session.
     if (headers_sent($sentFile, $sentLine)) {
         error_log(
             "SESSION ERROR: Headers already sent in {$sentFile} on line {$sentLine}."
         );
 
         http_response_code(500);
-        exit("Session initialization failed. Please check the server logs.");
+        exit("Session initialization failed.");
     }
 
-    // Use the system temporary directory for session files.
+    // Configure session storage.
     $sessionPath = sys_get_temp_dir();
 
     if (!is_dir($sessionPath) || !is_writable($sessionPath)) {
-        error_log("SESSION ERROR: Session directory is not writable: " . $sessionPath);
+        error_log(
+            "SESSION ERROR: Session directory is not writable: " . $sessionPath
+        );
 
         http_response_code(500);
         exit("Session storage is unavailable.");
     }
 
-    if (!session_save_path($sessionPath)) {
-        error_log("SESSION ERROR: Could not configure session storage.");
+    // session_save_path() returns the PREVIOUS path.
+    // Verify the current path instead of checking its return value.
+    session_save_path($sessionPath);
+
+    if (session_save_path() !== $sessionPath) {
+        error_log(
+            "SESSION ERROR: Failed to configure session path: " . $sessionPath
+        );
+
+        http_response_code(500);
+        exit("Session storage configuration failed.");
     }
 
-    // Detect HTTPS, including Render's reverse proxy.
+    // Detect HTTPS behind Render's reverse proxy.
     $isHttps =
         (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off") ||
         (
@@ -48,7 +58,6 @@ if (session_status() === PHP_SESSION_NONE) {
             strtolower((string) $_SERVER["HTTP_X_FORWARDED_PROTO"]) === "https"
         );
 
-    // Configure session cookie before starting the session.
     session_set_cookie_params([
         "lifetime" => 0,
         "path" => "/",
@@ -58,7 +67,6 @@ if (session_status() === PHP_SESSION_NONE) {
         "samesite" => "Lax"
     ]);
 
-    // Start session.
     if (!session_start()) {
         error_log(
             "SESSION ERROR: session_start() failed. Save path: " .
@@ -66,19 +74,15 @@ if (session_status() === PHP_SESSION_NONE) {
         );
 
         http_response_code(500);
-        exit("Session initialization failed. Please check the server logs.");
+        exit("Session initialization failed.");
     }
 }
 
-// Confirm that the session is active.
 if (session_status() !== PHP_SESSION_ACTIVE) {
-    error_log(
-        "SESSION ERROR: Session is not active. Status: " .
-        session_status()
-    );
+    error_log("SESSION ERROR: Session is not active.");
 
     http_response_code(500);
-    exit("Session initialization failed. Please check the server logs.");
+    exit("Session initialization failed.");
 }
 
 // --------------------------------------------------
@@ -123,7 +127,6 @@ try {
         PDO::ATTR_TIMEOUT => 10
     ];
 
-    // Aiven SSL configuration for online deployment.
     if ($isOnline) {
 
         $caFile = __DIR__ . "/ca.pem";
