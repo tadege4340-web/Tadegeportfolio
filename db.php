@@ -1,25 +1,55 @@
+
 <?php
 /**
- * Database connection for local MAMP and Render deployment.
+ * Database connection for MAMP and Render.
  * Uses Aiven MySQL online.
  */
 
-// Hide PHP errors from website visitors.
+// Hide errors from website visitors; write them to server logs.
 ini_set("display_errors", "0");
 ini_set("display_startup_errors", "0");
 ini_set("log_errors", "1");
 error_reporting(E_ALL);
 
-// Start the session before any HTML or output.
+// --------------------------------------------------
+// 1. SESSION INITIALIZATION
+// --------------------------------------------------
+
 if (session_status() === PHP_SESSION_NONE) {
 
+    // Check whether output was sent before starting the session.
+    if (headers_sent($sentFile, $sentLine)) {
+        error_log(
+            "SESSION ERROR: Headers already sent in {$sentFile} on line {$sentLine}."
+        );
+
+        http_response_code(500);
+        exit("Session initialization failed. Please check the server logs.");
+    }
+
+    // Use the system temporary directory for session files.
+    $sessionPath = sys_get_temp_dir();
+
+    if (!is_dir($sessionPath) || !is_writable($sessionPath)) {
+        error_log("SESSION ERROR: Session directory is not writable: " . $sessionPath);
+
+        http_response_code(500);
+        exit("Session storage is unavailable.");
+    }
+
+    if (!session_save_path($sessionPath)) {
+        error_log("SESSION ERROR: Could not configure session storage.");
+    }
+
+    // Detect HTTPS, including Render's reverse proxy.
     $isHttps =
         (!empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off") ||
         (
             isset($_SERVER["HTTP_X_FORWARDED_PROTO"]) &&
-            strtolower((string)$_SERVER["HTTP_X_FORWARDED_PROTO"]) === "https"
+            strtolower((string) $_SERVER["HTTP_X_FORWARDED_PROTO"]) === "https"
         );
 
+    // Configure session cookie before starting the session.
     session_set_cookie_params([
         "lifetime" => 0,
         "path" => "/",
@@ -29,31 +59,49 @@ if (session_status() === PHP_SESSION_NONE) {
         "samesite" => "Lax"
     ]);
 
+    // Start session.
     if (!session_start()) {
-        error_log("SESSION ERROR: PHP could not start the session.");
+        error_log(
+            "SESSION ERROR: session_start() failed. Save path: " .
+            session_save_path()
+        );
+
         http_response_code(500);
-        exit("Session initialization failed.");
+        exit("Session initialization failed. Please check the server logs.");
     }
 }
 
+// Confirm that the session is active.
 if (session_status() !== PHP_SESSION_ACTIVE) {
-    error_log("SESSION ERROR: Session is not active.");
+    error_log(
+        "SESSION ERROR: Session is not active. Status: " .
+        session_status()
+    );
+
     http_response_code(500);
-    exit("Session initialization failed.");
+    exit("Session initialization failed. Please check the server logs.");
 }
 
-// Read environment variables.
+// --------------------------------------------------
+// 2. ENVIRONMENT VARIABLE HELPER
+// --------------------------------------------------
+
 function env_or(string $key, string $default): string
 {
     $value = getenv($key);
 
-    return ($value === false || trim($value) === "")
-        ? $default
-        : trim($value);
+    if ($value === false || trim($value) === "") {
+        return $default;
+    }
+
+    return trim($value);
 }
 
-// Database configuration.
-$isOnline = trim((string)getenv("DB_HOST")) !== "";
+// --------------------------------------------------
+// 3. DATABASE CONFIGURATION
+// --------------------------------------------------
+
+$isOnline = trim((string) getenv("DB_HOST")) !== "";
 
 $host = env_or("DB_HOST", "127.0.0.1");
 $port = env_or("DB_PORT", "3306");
@@ -61,7 +109,10 @@ $dbname = env_or("DB_NAME", "tadege_portfolio");
 $username = env_or("DB_USER", "root");
 $password = env_or("DB_PASSWORD", "root");
 
-// Connect to MySQL.
+// --------------------------------------------------
+// 4. MYSQL CONNECTION
+// --------------------------------------------------
+
 try {
 
     $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
@@ -73,17 +124,21 @@ try {
         PDO::ATTR_TIMEOUT => 10
     ];
 
-    // Aiven SSL configuration.
+    // Aiven SSL configuration for online deployment.
     if ($isOnline) {
 
         $caFile = __DIR__ . "/ca.pem";
 
         if (is_file($caFile)) {
+
             $options[PDO::MYSQL_ATTR_SSL_CA] = $caFile;
             $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+
         } else {
+
             error_log(
-                "DATABASE WARNING: ca.pem not found; certificate verification disabled."
+                "DATABASE WARNING: ca.pem not found. " .
+                "Certificate verification is disabled."
             );
 
             $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
