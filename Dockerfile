@@ -1,7 +1,7 @@
 
 FROM php:8.2-apache
 
-# Install system packages required for PHP ZIP
+# Install system packages and PHP extensions
 RUN apt-get update && apt-get install -y \
     unzip \
     libzip-dev \
@@ -21,7 +21,7 @@ COPY . /var/www/html/
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-# Configure file uploads
-RUN printf "upload_max_filesize=5M\npost_max_size=6M\n" > /usr/local/etc/php/conf.d/uploads.ini
+# Configure large file uploads
+RUN printf "upload_max_filesize=100M\npost_max_size=110M\nmemory_limit=256M\nmax_execution_time=300\nmax_input_time=300\n" > /usr/local/etc/php/conf.d/uploads.ini
 
 EXPOSE 80
