@@ -2,26 +2,59 @@
 <?php
 require_once __DIR__ . "/db.php";
 
+// Keep errors hidden from website visitors.
+ini_set("display_errors", "0");
+ini_set("log_errors", "1");
+error_reporting(E_ALL);
+
+// Confirm the session.
 if (empty($_SESSION["admin"])) {
     header("Location: admin_login.php");
     exit;
 }
 
-$totalMessages = (int) $pdo->query(
-    "SELECT COUNT(*) FROM contact_messages"
-)->fetchColumn();
+try {
+    error_log("ADMIN DASHBOARD: Session verified.");
 
-$unreadMessages = (int) $pdo->query(
-    "SELECT COUNT(*) FROM contact_messages WHERE is_read = 0"
-)->fetchColumn();
+    // Messages count.
+    $totalMessages = (int) $pdo->query(
+        "SELECT COUNT(*) FROM contact_messages"
+    )->fetchColumn();
 
-$totalCVs = (int) $pdo->query(
-    "SELECT COUNT(*) FROM cv_uploads"
-)->fetchColumn();
+    error_log("ADMIN DASHBOARD: Total messages loaded.");
 
-$publishedCVs = (int) $pdo->query(
-    "SELECT COUNT(*) FROM cv_uploads WHERE is_public = 1"
-)->fetchColumn();
+    // Unread messages count.
+    $unreadMessages = (int) $pdo->query(
+        "SELECT COUNT(*) FROM contact_messages WHERE is_read = 0"
+    )->fetchColumn();
+
+    error_log("ADMIN DASHBOARD: Unread messages loaded.");
+
+    // Total CV count.
+    $totalCVs = (int) $pdo->query(
+        "SELECT COUNT(*) FROM cv_uploads"
+    )->fetchColumn();
+
+    error_log("ADMIN DASHBOARD: Total CVs loaded.");
+
+    // Published CV count.
+    $publishedCVs = (int) $pdo->query(
+        "SELECT COUNT(*) FROM cv_uploads WHERE is_public = 1"
+    )->fetchColumn();
+
+    error_log("ADMIN DASHBOARD: All database queries completed.");
+
+} catch (Throwable $e) {
+    error_log(
+        "ADMIN DASHBOARD ERROR: " .
+        $e->getMessage() .
+        " in " . $e->getFile() .
+        " on line " . $e->getLine()
+    );
+
+    http_response_code(500);
+    exit("Dashboard temporarily unavailable. Please check server logs.");
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -31,6 +64,7 @@ $publishedCVs = (int) $pdo->query(
     <title>Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="min-h-screen bg-slate-950 text-slate-100">
 
 <header class="border-b border-slate-800 bg-slate-900">
@@ -39,6 +73,7 @@ $publishedCVs = (int) $pdo->query(
             <h1 class="text-xl font-bold">Portfolio Admin</h1>
             <p class="text-sm text-slate-400">Administration Dashboard</p>
         </div>
+
         <a href="admin_logout.php"
            class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-sm font-semibold">
             Logout
@@ -49,7 +84,10 @@ $publishedCVs = (int) $pdo->query(
 <main class="max-w-6xl mx-auto px-6 py-10">
 
     <h2 class="text-2xl font-bold mb-2">Welcome, Admin</h2>
-    <p class="text-slate-400 mb-8">Manage your portfolio messages and CV documents.</p>
+
+    <p class="text-slate-400 mb-8">
+        Manage your portfolio messages and CV documents.
+    </p>
 
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
 
@@ -79,25 +117,36 @@ $publishedCVs = (int) $pdo->query(
 
         <a href="admin_message.php"
            class="block bg-slate-900 border border-slate-800 hover:border-indigo-500 rounded-2xl p-7 transition">
+
             <div class="flex justify-between items-center">
                 <h3 class="text-xl font-bold">Notifications</h3>
+
                 <span class="bg-indigo-600 text-white rounded-full px-3 py-1 text-sm">
                     <?= $unreadMessages ?> New
                 </span>
             </div>
+
             <p class="text-slate-400 mt-3">
                 View messages sent by visitors through your portfolio contact form.
             </p>
-            <p class="text-indigo-400 mt-5 font-semibold">View Messages →</p>
+
+            <p class="text-indigo-400 mt-5 font-semibold">
+                View Messages →
+            </p>
         </a>
 
         <a href="admin_upload_cv.php"
            class="block bg-slate-900 border border-slate-800 hover:border-indigo-500 rounded-2xl p-7 transition">
+
             <h3 class="text-xl font-bold">Upload CV</h3>
+
             <p class="text-slate-400 mt-3">
                 Upload a new CV and choose whether it should appear publicly on your portfolio.
             </p>
-            <p class="text-indigo-400 mt-5 font-semibold">Upload Document →</p>
+
+            <p class="text-indigo-400 mt-5 font-semibold">
+                Upload Document →
+            </p>
         </a>
 
     </div>
