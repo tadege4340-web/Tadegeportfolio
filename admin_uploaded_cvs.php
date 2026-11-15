@@ -2,45 +2,31 @@
 <?php
 require_once __DIR__ . "/db.php";
 
-// Only administrators can access this page
+// Ensure db.php successfully initialized the session.
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    error_log("Admin uploaded CVs: Session is not active after db.php.");
+    http_response_code(500);
+    exit("Session initialization failed. Please check db.php.");
+}
+
+// Check administrator login.
 if (empty($_SESSION["admin"])) {
     header("Location: admin_login.php");
     exit;
 }
 
-// Project URL
-$baseUrl = "/deployed";
-
-// Initialize variables
+// Initialize variables.
 $cvs = [];
 $error = "";
 
-// Check upload page
-$uploadPageExists = is_file(__DIR__ . "/admin_upload_cv.php");
-
-// Load uploaded files
-try {
-    $stmt = $pdo->query("
-        SELECT
-            id,
-            original_name,
-            file_size,
-            mime_type,
-            uploaded_at,
-            is_public
-        FROM cv_uploads
-        ORDER BY id DESC
-    ");
-
-    $cvs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-    error_log("CV listing error: " . $e->getMessage());
-    $error = "Could not load uploaded files. Please check your database.";
+// Escape output safely.
+function e($value): string
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8");
 }
 
-// Format file size
-function formatFileSize($bytes)
+// Format file size.
+function formatFileSize($bytes): string
 {
     $bytes = (float)$bytes;
 
@@ -59,13 +45,39 @@ function formatFileSize($bytes)
     return number_format($bytes, 0) . " Bytes";
 }
 
-// Escape output
-function e($value)
-{
-    return htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8");
-}
-?>
+// Load uploaded CV files.
+try {
+    $stmt = $pdo->query("
+        SELECT
+            id,
+            original_name,
+            file_size,
+            mime_type,
+            uploaded_at,
+            is_public
+        FROM cv_uploads
+        ORDER BY id DESC
+    ");
 
+    $cvs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+} catch (Throwable $exception) {
+    error_log(
+        "CV listing error: " . $exception->getMessage()
+    );
+
+    $error = "Could not load uploaded files. Please check the database connection.";
+}
+
+// Check upload page.
+$uploadPageExists = is_file(__DIR__ . "/admin_upload_cv.php");
+
+// Use relative links so local MAMP and Render both work.
+$uploadUrl = "admin_upload_cv.php";
+$dashboardUrl = "admin_dashboard.php";
+$websiteUrl = "index.php";
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -138,13 +150,9 @@ function e($value)
 
         <div class="flex flex-wrap items-center gap-3">
 
-            <!-- UPLOAD NEW -->
             <?php if ($uploadPageExists): ?>
 
-                <a
-                    href="<?= e($baseUrl) ?>/admin_upload_cv.php"
-                    class="upload-button"
-                >
+                <a href="<?= e($uploadUrl) ?>" class="upload-button">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                     Upload New
                 </a>
@@ -158,20 +166,14 @@ function e($value)
 
             <?php endif; ?>
 
-            <!-- DASHBOARD -->
-            <a
-                href="<?= e($baseUrl) ?>/admin_dashboard.php"
-                class="text-sm text-slate-300 hover:text-white"
-            >
+            <a href="<?= e($dashboardUrl) ?>"
+               class="text-sm text-slate-300 hover:text-white">
                 <i class="fa-solid fa-arrow-left mr-1"></i>
                 Dashboard
             </a>
 
-            <!-- WEBSITE -->
-            <a
-                href="<?= e($baseUrl) ?>/index.php"
-                class="text-sm text-slate-300 hover:text-white"
-            >
+            <a href="<?= e($websiteUrl) ?>"
+               class="text-sm text-slate-300 hover:text-white">
                 <i class="fa-solid fa-globe mr-1"></i>
                 Website
             </a>
@@ -180,7 +182,7 @@ function e($value)
     </div>
 
     <!-- ERROR MESSAGE -->
-    <?php if ($error): ?>
+    <?php if ($error !== ""): ?>
 
         <div class="bg-red-900/40 border border-red-700 text-red-300 p-4 rounded-xl mb-6">
             <i class="fa-solid fa-circle-exclamation mr-2"></i>
@@ -197,7 +199,7 @@ function e($value)
             <strong>Upload page not found!</strong>
 
             <p class="text-sm mt-2">
-                Create admin_upload_cv.php inside the deployed folder.
+                Create admin_upload_cv.php inside the project folder.
             </p>
 
         </div>
@@ -247,15 +249,17 @@ function e($value)
             <?php foreach ($cvs as $c): ?>
 
                 <?php
+                    $originalName = $c["original_name"] ?? "Unnamed file";
+
                     $extension = strtolower(
-                        pathinfo($c["original_name"], PATHINFO_EXTENSION)
+                        pathinfo($originalName, PATHINFO_EXTENSION)
                     );
 
                     $fileId = (int)$c["id"];
 
-                    $viewUrl = $baseUrl . "/cv_file.php?id=" . $fileId;
+                    $viewUrl = "cv_file.php?id=" . $fileId;
 
-                    $downloadUrl = $baseUrl . "/cv_file.php?id=" . $fileId . "&download=1";
+                    $downloadUrl = "cv_file.php?id=" . $fileId . "&download=1";
                 ?>
 
                 <div class="file-card bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
@@ -272,7 +276,7 @@ function e($value)
                         <div class="min-w-0 flex-1">
 
                             <p class="text-sm font-semibold text-white break-words">
-                                <?= e($c["original_name"]) ?>
+                                <?= e($originalName) ?>
                             </p>
 
                             <p class="text-xs text-slate-500 mt-2">
@@ -281,17 +285,17 @@ function e($value)
 
                                 <span class="mx-1">·</span>
 
-                                <?= e(formatFileSize($c["file_size"])) ?>
+                                <?= e(formatFileSize($c["file_size"] ?? 0)) ?>
 
                                 <span class="mx-1">·</span>
 
-                                <?= e($c["uploaded_at"]) ?>
+                                <?= e($c["uploaded_at"] ?? "") ?>
 
                             </p>
 
                             <p class="text-xs mt-2">
 
-                                <?php if ((int)$c["is_public"] === 1): ?>
+                                <?php if ((int)($c["is_public"] ?? 0) === 1): ?>
 
                                     <span class="text-emerald-400">
                                         <i class="fa-solid fa-globe mr-1"></i>
