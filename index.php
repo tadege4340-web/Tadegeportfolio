@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . "/db.php";
 
@@ -371,7 +370,7 @@ if (!function_exists("e")) {
 
         <?php if ($isAdmin): ?>
 
-            <a href="google.com"
+            <a href="logout.php"
                onclick="return confirm('Are you sure you want to logout?');"
                class="block text-center logout-btn py-3 rounded-xl font-semibold">
                 <i class="fa-solid fa-right-from-bracket mr-2"></i>
