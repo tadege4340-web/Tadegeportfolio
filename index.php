@@ -1,3 +1,4 @@
+
 <?php
 require_once __DIR__ . "/db.php";
 
@@ -80,8 +81,10 @@ if (!function_exists("e")) {
             color: white;
         }
 
+        /* HEADER */
+
         .separated-header {
-            background: rgba(2, 6, 23, 0.88);
+            background: rgba(2, 6, 23, 0.96);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(99, 102, 241, 0.18);
@@ -117,6 +120,69 @@ if (!function_exists("e")) {
             width: 100%;
         }
 
+        /* MOBILE MENU BUTTON */
+
+        .mobile-menu-button {
+            display: none;
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            min-height: 48px;
+            padding: 0;
+            border: 1px solid rgba(129, 140, 248, 0.75);
+            border-radius: 13px;
+            background: rgba(79, 70, 229, 0.22);
+            color: #ffffff;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            z-index: 100;
+            flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .mobile-menu-button:hover,
+        .mobile-menu-button:focus-visible {
+            background: rgba(99, 102, 241, 0.4);
+            border-color: #c4b5fd;
+            outline: none;
+        }
+
+        .menu-lines {
+            width: 24px;
+            height: 19px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .menu-lines span {
+            display: block;
+            width: 24px;
+            height: 3px;
+            background: #ffffff;
+            border-radius: 5px;
+            transition: transform 0.25s ease, opacity 0.2s ease;
+        }
+
+        /* Three lines become an X */
+
+        .mobile-menu-button.active .menu-lines span:first-child {
+            transform: translateY(8px) rotate(45deg);
+        }
+
+        .mobile-menu-button.active .menu-lines span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-button.active .menu-lines span:last-child {
+            transform: translateY(-8px) rotate(-45deg);
+        }
+
+        /* BUTTONS */
+
         .btn-rgb {
             background: linear-gradient(100deg, #6366f1, #9333ea, #ec4899);
             background-size: 200% auto;
@@ -149,6 +215,8 @@ if (!function_exists("e")) {
             background: #b91c1c;
             transform: translateY(-2px);
         }
+
+        /* CARDS */
 
         .glass-card {
             background: linear-gradient(
@@ -250,8 +318,109 @@ if (!function_exists("e")) {
         }
 
         #mobile-menu {
-            transition: all 0.3s ease;
+            transition: opacity 0.25s ease;
         }
+
+        /* MOBILE RESPONSIVE DESIGN */
+
+        @media (max-width: 767px) {
+
+            .mobile-menu-button {
+                display: flex !important;
+            }
+
+            .separated-header > div {
+                padding-left: 14px;
+                padding-right: 14px;
+                gap: 8px;
+            }
+
+            .separated-header > div > a:first-child {
+                min-width: 0;
+                gap: 8px;
+            }
+
+            .separated-header > div > a:first-child > div:last-child {
+                font-size: 17px;
+                white-space: nowrap;
+            }
+
+            #mobile-menu {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                max-height: calc(100dvh - 75px);
+                overflow-y: auto;
+                background: rgba(2, 6, 23, 0.98);
+                border-top: 1px solid rgba(99, 102, 241, 0.35);
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45);
+                padding: 18px 20px 24px;
+                z-index: 99;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            #mobile-menu a {
+                display: block;
+                padding: 13px 14px;
+                border-radius: 10px;
+                font-size: 15px;
+                font-weight: 600;
+            }
+
+            #mobile-menu a:hover,
+            #mobile-menu a:focus {
+                background: rgba(99, 102, 241, 0.15);
+            }
+
+            .hero-title {
+                font-size: 2.4rem;
+                line-height: 1.2;
+            }
+
+            .hero-glow {
+                width: 280px;
+                height: 280px;
+            }
+
+            .glass-card:hover {
+                transform: none;
+            }
+
+            .cv-action {
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .separated-header > div {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .separated-header > div > a:first-child > div:last-child {
+                font-size: 15px;
+            }
+
+            .mobile-menu-button {
+                width: 46px;
+                height: 46px;
+                min-width: 46px;
+                min-height: 46px;
+            }
+
+            .hero-title {
+                font-size: 2.1rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .mobile-menu-button {
+                display: none !important;
+            }
+        }
+
+        /* SCROLLBAR */
 
         ::-webkit-scrollbar {
             width: 8px;
@@ -268,12 +437,6 @@ if (!function_exists("e")) {
 
         ::-webkit-scrollbar-thumb:hover {
             background: #6366f1;
-        }
-
-        @media (max-width: 640px) {
-            .hero-title {
-                font-size: 2.6rem;
-            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -313,6 +476,8 @@ if (!function_exists("e")) {
 
         </a>
 
+        <!-- DESKTOP NAVIGATION -->
+
         <nav class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-300">
             <a href="#about" class="nav-link">About</a>
             <a href="#skills" class="nav-link">Skills</a>
@@ -340,12 +505,21 @@ if (!function_exists("e")) {
 
             <?php endif; ?>
 
+            <!-- MOBILE HAMBURGER BUTTON -->
+
             <button id="menu-btn"
                     type="button"
-                    class="md:hidden text-slate-300 hover:text-white p-2"
-                    aria-label="Toggle navigation"
-                    aria-expanded="false">
-                <i id="menu-icon" class="fa-solid fa-bars text-xl"></i>
+                    class="mobile-menu-button md:hidden"
+                    aria-label="Open navigation menu"
+                    aria-expanded="false"
+                    aria-controls="mobile-menu">
+
+                <span class="menu-lines">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+
             </button>
 
         </div>
@@ -355,16 +529,36 @@ if (!function_exists("e")) {
     <!-- MOBILE MENU -->
 
     <div id="mobile-menu"
-         class="hidden md:hidden bg-slate-900/95 border-t border-indigo-500/20 px-6 py-5 space-y-4">
+         class="hidden md:hidden bg-slate-900/95 border-t border-indigo-500/20 px-6 py-5 space-y-3">
 
-        <a href="#about" class="mobile-link block text-slate-300 hover:text-indigo-300">About</a>
-        <a href="#skills" class="mobile-link block text-slate-300 hover:text-indigo-300">Skills</a>
-        <a href="#projects" class="mobile-link block text-slate-300 hover:text-indigo-300">Projects</a>
-        <a href="#cv" class="mobile-link block text-slate-300 hover:text-indigo-300">CV</a>
-        <a href="#contact" class="mobile-link block text-slate-300 hover:text-indigo-300">Contact</a>
+        <a href="#about" class="mobile-link text-slate-300 hover:text-indigo-300">
+            <i class="fa-solid fa-user w-6 text-indigo-400"></i>
+            About
+        </a>
+
+        <a href="#skills" class="mobile-link text-slate-300 hover:text-indigo-300">
+            <i class="fa-solid fa-code w-6 text-indigo-400"></i>
+            Skills
+        </a>
+
+        <a href="#projects" class="mobile-link text-slate-300 hover:text-indigo-300">
+            <i class="fa-solid fa-folder-open w-6 text-indigo-400"></i>
+            Projects
+        </a>
+
+        <a href="#cv" class="mobile-link text-slate-300 hover:text-indigo-300">
+            <i class="fa-solid fa-file-lines w-6 text-indigo-400"></i>
+            CV
+        </a>
+
+        <a href="#contact" class="mobile-link text-slate-300 hover:text-indigo-300">
+            <i class="fa-solid fa-envelope w-6 text-indigo-400"></i>
+            Contact
+        </a>
 
         <a href="#contact"
-           class="mobile-link block text-center btn-rgb py-3 rounded-xl font-semibold">
+           class="mobile-link text-center btn-rgb py-3 rounded-xl font-semibold">
+            <i class="fa-solid fa-paper-plane mr-2"></i>
             Get in Touch
         </a>
 
@@ -372,7 +566,7 @@ if (!function_exists("e")) {
 
             <a href="logout.php"
                onclick="return confirm('Are you sure you want to logout?');"
-               class="block text-center logout-btn py-3 rounded-xl font-semibold">
+               class="text-center logout-btn py-3 rounded-xl font-semibold">
                 <i class="fa-solid fa-right-from-bracket mr-2"></i>
                 Logout
             </a>
@@ -1185,46 +1379,106 @@ if (!function_exists("e")) {
 
 <script>
 
-// MOBILE NAVIGATION
+// ==========================================
+// MOBILE NAVIGATION - TOUCH FRIENDLY
+// ==========================================
 
 const menuBtn = document.getElementById("menu-btn");
 const mobileMenu = document.getElementById("mobile-menu");
-const menuIcon = document.getElementById("menu-icon");
 
-if (menuBtn && mobileMenu && menuIcon) {
+if (menuBtn && mobileMenu) {
+
+    function closeMobileMenu() {
+        mobileMenu.classList.add("hidden");
+
+        menuBtn.classList.remove("active");
+
+        menuBtn.setAttribute("aria-expanded", "false");
+
+        menuBtn.setAttribute(
+            "aria-label",
+            "Open navigation menu"
+        );
+    }
+
+    function openMobileMenu() {
+        mobileMenu.classList.remove("hidden");
+
+        menuBtn.classList.add("active");
+
+        menuBtn.setAttribute("aria-expanded", "true");
+
+        menuBtn.setAttribute(
+            "aria-label",
+            "Close navigation menu"
+        );
+    }
 
     menuBtn.addEventListener("click", function () {
 
-        mobileMenu.classList.toggle("hidden");
+        const isOpen = menuBtn.getAttribute("aria-expanded") === "true";
 
-        const isOpen = !mobileMenu.classList.contains("hidden");
-
-        menuIcon.className = isOpen
-            ? "fa-solid fa-xmark text-xl"
-            : "fa-solid fa-bars text-xl";
-
-        menuBtn.setAttribute("aria-expanded", String(isOpen));
+        if (isOpen) {
+            closeMobileMenu();
+        } else {
+            openMobileMenu();
+        }
 
     });
 
-    document.querySelectorAll(".mobile-link").forEach(link => {
+    // Close after selecting a navigation link
+
+    document.querySelectorAll("#mobile-menu a").forEach(link => {
 
         link.addEventListener("click", function () {
-
-            mobileMenu.classList.add("hidden");
-
-            menuIcon.className = "fa-solid fa-bars text-xl";
-
-            menuBtn.setAttribute("aria-expanded", "false");
-
+            closeMobileMenu();
         });
+
+    });
+
+    // Close when clicking outside the menu and button
+
+    document.addEventListener("click", function (event) {
+
+        const clickedInsideMenu = mobileMenu.contains(event.target);
+        const clickedButton = menuBtn.contains(event.target);
+
+        if (
+            !clickedInsideMenu &&
+            !clickedButton &&
+            menuBtn.getAttribute("aria-expanded") === "true"
+        ) {
+            closeMobileMenu();
+        }
+
+    });
+
+    // Close when returning to desktop screen size
+
+    window.addEventListener("resize", function () {
+
+        if (window.innerWidth >= 768) {
+            closeMobileMenu();
+        }
+
+    });
+
+    // Support Escape key
+
+    document.addEventListener("keydown", function (event) {
+
+        if (event.key === "Escape") {
+            closeMobileMenu();
+        }
 
     });
 
 }
 
 
+// ==========================================
 // CONTACT FORM
+// ==========================================
 
 const contactForm = document.getElementById("contactForm");
 const contactStatus = document.getElementById("contactStatus");
