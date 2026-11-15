@@ -1,120 +1,128 @@
-
 <?php
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
 
-header("Content-Type: application/json; charset=UTF-8");
+ob_start();
 
 require_once __DIR__ . "/db.php";
 
-// Load manually installed PHPMailer files
-require_once __DIR__ . "/PHPMailer/Exception.php";
-require_once __DIR__ . "/PHPMailer/PHPMailer.php";
-require_once __DIR__ . "/PHPMailer/SMTP.php";
+header("Content-Type: application/json; charset=UTF-8");
 
-// Return JSON response
-function respond($success, $message)
+// Always return clean JSON: {"ok": true} or {"ok": false, "error": "..."}
+function respond(bool $success, string $message = "", int $code = 200): void
 {
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    http_response_code($code);
     echo json_encode([
-        "ok" => $success,
+        "ok"    => $success,
         "error" => $success ? null : $message
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// Accept POST requests only
-if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    http_response_code(405);
-    respond(false, "Invalid request method.");
+// Turn any unexpected PHP error into a JSON reply instead of an empty page
+set_exception_handler(function (Throwable $e) {
+    error_log("Contact fatal: " . $e->getMessage());
+    respond(false, "Server error. Please try again later.", 500);
+});
+
+if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
+    respond(false, "Invalid request method.", 405);
 }
 
 // Get and validate form data
-$name = trim($_POST["name"] ?? "");
-$email = trim($_POST["email"] ?? "");
-$subject = trim($_POST["subject"] ?? "");
-$message = trim($_POST["message"] ?? "");
+$name    = trim((string)($_POST["name"] ?? ""));
+$email   = trim((string)($_POST["email"] ?? ""));
+$subject = trim((string)($_POST["subject"] ?? ""));
+$message = trim((string)($_POST["message"] ?? ""));
 
 if ($name === "" || $email === "" || $subject === "" || $message === "") {
-    http_response_code(400);
-    respond(false, "Please complete all fields.");
+    respond(false, "Please complete all fields.", 400);
 }
 
-if (strlen($name) > 100 ||
-    strlen($email) > 190 ||
-    strlen($subject) > 200 ||
-    strlen($message) > 5000) {
-    http_response_code(400);
-    respond(false, "One or more fields are too long.");
+if (mb_strlen($name) > 100 ||
+    mb_strlen($email) > 150 ||
+    mb_strlen($subject) > 200 ||
+    mb_strlen($message) > 5000) {
+    respond(false, "One or more fields are too long.", 400);
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    http_response_code(400);
-    respond(false, "Please enter a valid email address.");
+    respond(false, "Please enter a valid email address.", 400);
 }
 
-// Save message in MySQL first
+// 1) Save the message in MySQL first
 try {
     $stmt = $pdo->prepare(
-        "INSERT INTO contact_messages
-        (name, email, subject, message, is_read, created_at)
-        VALUES
-        (:name, :email, :subject, :message, 0, NOW())"
+        "INSERT INTO contact_messages (name, email, subject, message, is_read)
+         VALUES (:name, :email, :subject, :message, 0)"
     );
-
     $stmt->execute([
-        ":name" => $name,
-        ":email" => $email,
+        ":name"    => $name,
+        ":email"   => $email,
         ":subject" => $subject,
         ":message" => $message
     ]);
-
 } catch (PDOException $e) {
     error_log("Contact database error: " . $e->getMessage());
-
-    http_response_code(500);
-    respond(false, "Your message could not be saved. Please try again later.");
+    respond(false, "Your message could not be saved. Please try again later.", 500);
 }
 
-// Database save succeeded. Now attempt email notification.
+// 2) Optional email notification. It must never break the reply.
 try {
+    $config = [];
 
-    $config = require __DIR__ . "/mail_config.php";
-
-    $smtpUsername = trim($config["smtp_username"] ?? "");
-    $smtpPassword = trim($config["smtp_password"] ?? "");
-    $recipients = $config["recipients"] ?? [];
-
-    // Do not fail the visitor's submission if SMTP is not configured.
-    if ($smtpUsername === "" ||
-        $smtpPassword === "" ||
-        empty($recipients)) {
-
-        error_log("Contact email notification is not configured.");
-
-        respond(true, "Message saved successfully.");
+    // Local file (MAMP) if it exists
+    $configFile = __DIR__ . "/mail_config.php";
+    if (is_file($configFile)) {
+        $loaded = require $configFile;
+        if (is_array($loaded)) {
+            $config = $loaded;
+        }
     }
 
+    // Render environment variables override the file
+    $envUser = getenv("SMTP_USERNAME");
+    $envPass = getenv("SMTP_PASSWORD");
+    $envTo   = getenv("NOTIFY_EMAILS"); // comma separated
+
+    if ($envUser) { $config["smtp_username"] = $envUser; }
+    if ($envPass) { $config["smtp_password"] = $envPass; }
+    if ($envTo)   { $config["recipients"] = array_map("trim", explode(",", $envTo)); }
+
+    $smtpUsername = trim((string)($config["smtp_username"] ?? ""));
+    $smtpPassword = trim((string)($config["smtp_password"] ?? ""));
+    $recipients   = $config["recipients"] ?? [];
+
+    $phpmailerReady =
+        is_file(__DIR__ . "/PHPMailer/PHPMailer.php") &&
+        is_file(__DIR__ . "/PHPMailer/SMTP.php") &&
+        is_file(__DIR__ . "/PHPMailer/Exception.php");
+
+    if ($smtpUsername === "" || $smtpPassword === "" || empty($recipients) || !$phpmailerReady) {
+        error_log("Contact email notification is not configured.");
+        respond(true);
+    }
+
+    require_once __DIR__ . "/PHPMailer/Exception.php";
+    require_once __DIR__ . "/PHPMailer/PHPMailer.php";
+    require_once __DIR__ . "/PHPMailer/SMTP.php";
+
     $mail = new PHPMailer(true);
-
-    // SMTP configuration
     $mail->isSMTP();
-    $mail->Host = $config["smtp_host"] ?? "smtp.gmail.com";
-    $mail->SMTPAuth = true;
-    $mail->Username = $smtpUsername;
-    $mail->Password = $smtpPassword;
+    $mail->Host       = $config["smtp_host"] ?? "smtp.gmail.com";
+    $mail->SMTPAuth   = true;
+    $mail->Username   = $smtpUsername;
+    $mail->Password   = $smtpPassword;
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port = (int)($config["smtp_port"] ?? 587);
+    $mail->Port       = (int)($config["smtp_port"] ?? 587);
+    $mail->Timeout    = 8;      // do not hang if the port is blocked
+    $mail->CharSet    = "UTF-8";
 
-    $mail->CharSet = "UTF-8";
+    $mail->setFrom($smtpUsername, $config["from_name"] ?? "Portfolio Contact Form");
 
-    // Sender must be the authenticated Gmail account
-    $mail->setFrom(
-        $smtpUsername,
-        $config["from_name"] ?? "Portfolio Contact Form"
-    );
-
-    // Send to both notification addresses
     foreach ($recipients as $recipient) {
         if (filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
             $mail->addAddress($recipient);
@@ -122,60 +130,38 @@ try {
     }
 
     if (count($mail->getToAddresses()) === 0) {
-        throw new Exception("No valid notification recipients configured.");
+        throw new RuntimeException("No valid notification recipients configured.");
     }
 
-    // Reply directly to the visitor
     $mail->addReplyTo($email, $name);
 
-    $safeName = htmlspecialchars($name, ENT_QUOTES, "UTF-8");
-    $safeEmail = htmlspecialchars($email, ENT_QUOTES, "UTF-8");
+    $safeName    = htmlspecialchars($name, ENT_QUOTES, "UTF-8");
+    $safeEmail   = htmlspecialchars($email, ENT_QUOTES, "UTF-8");
     $safeSubject = htmlspecialchars($subject, ENT_QUOTES, "UTF-8");
-    $safeMessage = nl2br(
-        htmlspecialchars($message, ENT_QUOTES, "UTF-8")
-    );
+    $safeMessage = nl2br(htmlspecialchars($message, ENT_QUOTES, "UTF-8"));
 
     $mail->isHTML(true);
     $mail->Subject = "New Portfolio Contact: " . $subject;
-
     $mail->Body = "
         <h2>New Portfolio Contact Message</h2>
-
         <p><strong>Visitor Name:</strong> {$safeName}</p>
-
         <p><strong>Visitor Email:</strong> {$safeEmail}</p>
-
         <p><strong>Subject:</strong> {$safeSubject}</p>
-
         <hr>
-
         <h3>Message</h3>
-
         <p>{$safeMessage}</p>
-
         <hr>
-
         <p>This notification was sent from your portfolio contact form.</p>
     ";
-
     $mail->AltBody =
         "New Portfolio Contact Message\n\n" .
-        "Name: {$name}\n" .
-        "Email: {$email}\n" .
-        "Subject: {$subject}\n\n" .
-        "Message:\n{$message}";
+        "Name: {$name}\nEmail: {$email}\nSubject: {$subject}\n\nMessage:\n{$message}";
 
     $mail->send();
 
-} catch (Exception $e) {
-
-    // The visitor's message is already safely stored in MySQL.
-    error_log("Contact email error: " . $e->getMessage());
-
 } catch (Throwable $e) {
-
-    error_log("Contact notification error: " . $e->getMessage());
+    // The message is already saved in MySQL, so only log the email problem.
+    error_log("Contact email error: " . $e->getMessage());
 }
 
-// Message was saved, even if email delivery failed.
-respond(true, "Message saved successfully.");
+respond(true);
