@@ -1,4 +1,3 @@
-
 <?php
 /**
  * Database connection for MAMP and Render.
