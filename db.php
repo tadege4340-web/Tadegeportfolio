@@ -1,7 +1,7 @@
 <?php
 /**
- * Database connection for local MAMP and Render deployment.
- * IMPORTANT: On Render, set DB_HOST, DB_PORT, DB_NAME, DB_USER and DB_PASSWORD
+ * Database connection for local MAMP and Render deployment (Aiven MySQL).
+ * On Render, set DB_HOST, DB_PORT, DB_NAME, DB_USER and DB_PASSWORD
  * in the service Environment settings. Never commit real credentials.
  */
 
@@ -30,27 +30,36 @@ error_reporting(E_ALL);
 
 // Read deployment credentials from environment variables.
 // Local MAMP defaults are used only when environment variables are absent.
-$host = getenv("DB_HOST");
-$port = getenv("DB_PORT");
-$dbname = getenv("DB_NAME");
+$host     = getenv("DB_HOST");
+$port     = getenv("DB_PORT");
+$dbname   = getenv("DB_NAME");
 $username = getenv("DB_USER");
 $password = getenv("DB_PASSWORD");
 
-if ($host === false || $host === "") $host = "127.0.0.1";
-if ($port === false || $port === "") $port = "3306";
-if ($dbname === false || $dbname === "") $dbname = "tadege_portfolio";
+if ($host === false || $host === "")         $host = "127.0.0.1";
+if ($port === false || $port === "")         $port = "3306";
+if ($dbname === false || $dbname === "")     $dbname = "tadege_portfolio";
 if ($username === false || $username === "") $username = "root";
 if ($password === false || $password === "") $password = "root";
 
 try {
     $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
 
-    $pdo = new PDO($dsn, $username, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_TIMEOUT => 10
-    ]);
+        PDO::ATTR_EMULATE_PREPARES   => false,
+        PDO::ATTR_TIMEOUT            => 10
+    ];
+
+    // Use SSL only online (Aiven requires it). Local MAMP stays without SSL.
+    $caFile = __DIR__ . "/ca.pem";
+    if (getenv("DB_HOST") && file_exists($caFile)) {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = $caFile;
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+    }
+
+    $pdo = new PDO($dsn, $username, $password, $options);
 
 } catch (PDOException $e) {
     // Full details go only to the server log, never to the browser.
