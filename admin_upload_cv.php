@@ -4,10 +4,25 @@ require_once __DIR__ . "/vendor/autoload.php";
 
 use Aws\S3\S3Client;
 
-// Admin authentication
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    http_response_code(500);
+    exit("Session initialization failed.");
+}
+
 if (empty($_SESSION["admin"])) {
     header("Location: admin_login.php");
     exit;
+}
+
+function e($value): string
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8");
+}
+
+function storageEnv(string $name): string
+{
+    $value = getenv($name);
+    return $value === false ? "" : trim($value);
 }
 
 $maxFileSize = 20 * 1024 * 1024;
@@ -16,18 +31,6 @@ $maxFiles = 10;
 $successMessage = "";
 $errorMessages = [];
 
-function e($value): string
-{
-    return htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8");
-}
-
-function getStorageEnvironment(string $name): string
-{
-    $value = getenv($name);
-    return $value === false ? "" : trim($value);
-}
-
-// CSRF protection
 if (empty($_SESSION["upload_csrf"])) {
     $_SESSION["upload_csrf"] = bin2hex(random_bytes(32));
 }
@@ -68,9 +71,6 @@ $allowedMimeTypes = [
     "7z" => ["application/x-7z-compressed"]
 ];
 
-$allowedExtensions = array_keys($allowedMimeTypes);
-
-// Process upload
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $submittedToken = $_POST["csrf_token"] ?? "";
@@ -88,7 +88,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errorMessages[] = "AWS SDK is not installed correctly.";
 
     } elseif (
-        !isset($_FILES["documents"]) ||
         !isset($_FILES["documents"]["name"]) ||
         !is_array($_FILES["documents"]["name"])
     ) {
@@ -96,11 +95,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     } else {
 
-        $endpoint = getStorageEnvironment("SUPABASE_S3_ENDPOINT");
-        $region = getStorageEnvironment("SUPABASE_S3_REGION");
-        $accessKey = getStorageEnvironment("SUPABASE_S3_ACCESS_KEY");
-        $secretKey = getStorageEnvironment("SUPABASE_S3_SECRET_KEY");
-        $bucket = getStorageEnvironment("SUPABASE_S3_BUCKET");
+        $endpoint = storageEnv("SUPABASE_S3_ENDPOINT");
+        $region = storageEnv("SUPABASE_S3_REGION");
+        $accessKey = storageEnv("SUPABASE_S3_ACCESS_KEY");
+        $secretKey = storageEnv("SUPABASE_S3_SECRET_KEY");
+        $bucket = storageEnv("SUPABASE_S3_BUCKET");
 
         if (
             $endpoint === "" ||
@@ -124,16 +123,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             } else {
 
                 try {
-
                     $s3 = new S3Client([
                         "version" => "latest",
                         "region" => $region,
                         "endpoint" => rtrim($endpoint, "/"),
+                        "use_path_style_endpoint" => true,
+                        "signature_version" => "v4",
                         "credentials" => [
                             "key" => $accessKey,
                             "secret" => $secretKey
-                        ],
-                        "use_path_style_endpoint" => true
+                        ]
                     ]);
 
                     $finfo = new finfo(FILEINFO_MIME_TYPE);
@@ -146,16 +145,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             str_replace(
                                 "\\",
                                 "/",
-                                $_FILES["documents"]["name"][$i]
+                                (string)$_FILES["documents"]["name"][$i]
                             )
                         );
 
                         $tmpName = $_FILES["documents"]["tmp_name"][$i];
                         $fileSize = (int)$_FILES["documents"]["size"][$i];
-                        $uploadError = $_FILES["documents"]["error"][$i];
+                        $uploadError = (int)$_FILES["documents"]["error"][$i];
 
                         if ($uploadError !== UPLOAD_ERR_OK) {
-                            $errorMessages[] = $originalName . ": Upload failed.";
+                            $errorMessages[] = $originalName . ": Upload failed. Error code " . $uploadError . ".";
                             continue;
                         }
 
@@ -173,7 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             pathinfo($originalName, PATHINFO_EXTENSION)
                         );
 
-                        if (!in_array($extension, $allowedExtensions, true)) {
+                        if (!isset($allowedMimeTypes[$extension])) {
                             $errorMessages[] = $originalName . ": File extension is not allowed.";
                             continue;
                         }
@@ -184,7 +183,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             $detectedMime === false ||
                             !in_array(
                                 $detectedMime,
-                                $allowedMimeTypes[$extension] ?? [],
+                                $allowedMimeTypes[$extension],
                                 true
                             )
                         ) {
@@ -192,21 +191,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             continue;
                         }
 
-                        // Use the same key in Supabase and the database.
+                        // Generate one unique key for BOTH Supabase and MySQL.
                         $storedName = bin2hex(random_bytes(20)) . "." . $extension;
+
                         $objectUploaded = false;
 
                         try {
 
+                            // 1. Upload the actual file to Supabase.
                             $s3->putObject([
                                 "Bucket" => $bucket,
                                 "Key" => $storedName,
                                 "SourceFile" => $tmpName,
-                                "ContentType" => $detectedMime
+                                "ContentType" => $detectedMime,
+                                "ContentLength" => $fileSize
                             ]);
 
                             $objectUploaded = true;
 
+                            // 2. Verify that the object exists in Supabase.
+                            $s3->headObject([
+                                "Bucket" => $bucket,
+                                "Key" => $storedName
+                            ]);
+
+                            // 3. Save exactly the same key in Aiven MySQL.
                             $sql = "
                                 INSERT INTO cv_uploads (
                                     file_name,
@@ -249,8 +258,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                             $uploadedCount++;
 
-                        } catch (Throwable $e) {
+                        } catch (Throwable $exception) {
 
+                            // Remove the object if its database record was not saved.
                             if ($objectUploaded) {
                                 try {
                                     $s3->deleteObject([
@@ -258,59 +268,79 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                         "Key" => $storedName
                                     ]);
                                 } catch (Throwable $deleteError) {
-                                    error_log("Supabase cleanup error: " . $deleteError->getMessage());
+                                    error_log(
+                                        "Supabase cleanup error: " .
+                                        $deleteError->getMessage()
+                                    );
                                 }
                             }
 
-                            error_log("CV upload error: " . $e->getMessage());
+                            error_log(
+                                "CV upload error for " . $originalName . ": " .
+                                $exception->getMessage()
+                            );
 
                             $errorMessages[] =
-                                $originalName . ": Upload or database saving failed.";
+                                $originalName . ": Upload or database saving failed. Check Render logs.";
                         }
                     }
 
                     if ($uploadedCount > 0) {
                         $successMessage =
-                            $uploadedCount . " file(s) uploaded successfully.";
+                            $uploadedCount . " file(s) uploaded and saved successfully.";
 
                         $_SESSION["upload_csrf"] = bin2hex(random_bytes(32));
                     }
 
-                } catch (Throwable $e) {
+                } catch (Throwable $exception) {
 
-                    error_log("Supabase connection error: " . $e->getMessage());
+                    error_log(
+                        "Supabase connection error: " .
+                        $exception->getMessage()
+                    );
 
                     $errorMessages[] =
-                        "Could not connect to Supabase Storage. Check your storage settings.";
+                        "Could not connect to Supabase Storage. Check your storage settings and Render logs.";
                 }
             }
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Upload Files | Admin Dashboard</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        body { font-family: Arial, sans-serif; }
+        body {
+            font-family: Arial, sans-serif;
+        }
+
         .upload-area {
             border: 2px dashed #475569;
             transition: 0.3s ease;
         }
+
         .upload-area:hover {
             border-color: #10b981;
             background: rgba(16, 185, 129, 0.05);
         }
+
         .main-button {
             background: #059669;
             transition: 0.3s ease;
         }
+
         .main-button:hover {
             background: #047857;
             transform: translateY(-2px);
@@ -323,11 +353,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <div class="max-w-3xl mx-auto">
 
     <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+
         <div>
             <h1 class="text-3xl font-bold">
                 <i class="fa-solid fa-cloud-arrow-up text-emerald-400 mr-2"></i>
                 Upload New Files
             </h1>
+
             <p class="text-slate-400 mt-2">
                 Upload and manage your portfolio documents.
             </p>
@@ -338,6 +370,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <i class="fa-solid fa-arrow-left mr-2"></i>
             Back to Files
         </a>
+
     </div>
 
     <?php if ($successMessage): ?>
@@ -350,6 +383,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <?php if (!empty($errorMessages)): ?>
         <div class="bg-red-900/30 border border-red-700 text-red-300 rounded-xl p-4 mb-6">
             <h3 class="font-bold mb-2">Upload problems</h3>
+
             <ul class="list-disc pl-6 space-y-1 text-sm">
                 <?php foreach ($errorMessages as $message): ?>
                     <li><?= e($message) ?></li>
@@ -402,43 +436,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </div>
 
             <div class="mt-7 bg-slate-800/70 rounded-xl p-4">
+
                 <label class="flex items-center gap-3 cursor-pointer">
+
                     <input type="checkbox"
                            name="is_public"
                            value="1"
                            checked
                            class="w-5 h-5 accent-emerald-500">
+
                     <span>
                         <strong class="text-white">Make files public</strong>
+
                         <span class="block text-xs text-slate-400 mt-1">
-                            Public files can be accessed by website visitors.
+                            Allows visitors to access these files through your website.
                         </span>
                     </span>
+
                 </label>
+
             </div>
 
             <button type="submit"
                     class="main-button w-full mt-7 py-4 rounded-xl text-white font-bold">
+
                 <i class="fa-solid fa-upload mr-2"></i>
                 Upload Selected Files
+
             </button>
 
         </form>
+
     </div>
 
     <div class="mt-6 bg-slate-900 border border-slate-800 rounded-xl p-5">
+
         <h3 class="font-bold text-white mb-3">
             <i class="fa-solid fa-circle-info text-blue-400 mr-2"></i>
             Supported Formats
         </h3>
+
         <p class="text-sm text-slate-400 leading-7">
             PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, RTF, CSV,
             JPG, JPEG, PNG, GIF, WEBP, BMP, TIFF, ZIP, RAR and 7Z.
         </p>
-    </div>
 
-    <div class="text-center text-xs text-slate-600 mt-8">
-        Admin File Management | All Rights Reserved
     </div>
 
 </div>
@@ -466,6 +508,7 @@ fileInput.addEventListener("change", function () {
 
     files.forEach(function(file) {
         const item = document.createElement("div");
+
         item.className =
             "flex justify-between gap-3 bg-slate-800 rounded-lg p-3 mb-2";
 
@@ -479,6 +522,7 @@ fileInput.addEventListener("change", function () {
 
         item.appendChild(name);
         item.appendChild(size);
+
         selectedFiles.appendChild(item);
     });
 });
