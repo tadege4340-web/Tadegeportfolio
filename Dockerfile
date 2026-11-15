@@ -2,8 +2,9 @@ FROM php:8.2-apache
 
 RUN docker-php-ext-install pdo pdo_mysql
 
-COPY . /var/www/html/
+# Allow CV uploads up to 4 MB
+RUN printf "upload_max_filesize=5M\npost_max_size=6M\n" > /usr/local/etc/php/conf.d/uploads.ini
 
-RUN mkdir -p /var/www/html/uploads && chmod 777 /var/www/html/uploads
+COPY . /var/www/html/
 
 EXPOSE 80

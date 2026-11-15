@@ -1,5 +1,5 @@
 <?php
-require "db.php";
+require "db.php"; // This starts the session and connects to DB
 
 // Password: tadege
 $ADMIN_HASH = '$2b$12$WCZFVYjgCiP36ovI9BWQRujghnZARCLTTzi9/I0qx1DzqF8SZ7Do.';
@@ -9,7 +9,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (password_verify($_POST["password"] ?? "", $ADMIN_HASH)) {
         session_regenerate_id(true);
         $_SESSION["admin"] = true;
-        header("Location: index.php");
+       header("Location: admin_dashboard.php");
         exit;
     }
     $error = "Wrong password";

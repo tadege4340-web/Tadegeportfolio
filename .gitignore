@@ -1,0 +1,28 @@
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Sensitive configuration files
+db.php
+PHPMailer/mail_config.php
+
+# Diagnostic files
+php_info.php
+
+# Uploaded user files
+/uploads/cvs/*
+!/uploads/cvs/.gitkeep
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Editor and operating system files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Dependencies
+/vendor/
