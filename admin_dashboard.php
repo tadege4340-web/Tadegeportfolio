@@ -1,19 +1,19 @@
 
 <?php
-// IMPORTANT: Save this file using UTF-8 (without BOM).
-// There must be no spaces or blank lines before this opening PHP tag.
-
 require_once __DIR__ . "/db.php";
 
 ini_set("display_errors", "0");
 ini_set("log_errors", "1");
 error_reporting(E_ALL);
 
-// Verify admin session before producing any HTML.
+// db.php already starts the session.
 if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
+    error_log("ADMIN DASHBOARD ERROR: Session was not started by db.php.");
+    http_response_code(500);
+    exit("Session initialization failed.");
 }
 
+// Check administrator authentication.
 if (empty($_SESSION["admin"])) {
     header("Location: admin_login.php");
     exit;
@@ -22,22 +22,22 @@ if (empty($_SESSION["admin"])) {
 try {
     error_log("ADMIN DASHBOARD: Session verified.");
 
-    // Get total messages.
+    // Total messages.
     $totalMessages = (int) $pdo->query(
         "SELECT COUNT(*) FROM contact_messages"
     )->fetchColumn();
 
-    // Get unread messages.
+    // Unread messages.
     $unreadMessages = (int) $pdo->query(
         "SELECT COUNT(*) FROM contact_messages WHERE is_read = 0"
     )->fetchColumn();
 
-    // Get total uploaded CV documents.
+    // Total CV documents.
     $totalCVs = (int) $pdo->query(
         "SELECT COUNT(*) FROM cv_uploads"
     )->fetchColumn();
 
-    // Get publicly available CV documents.
+    // Published CV documents.
     $publishedCVs = (int) $pdo->query(
         "SELECT COUNT(*) FROM cv_uploads WHERE is_public = 1"
     )->fetchColumn();
