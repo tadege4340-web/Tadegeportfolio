@@ -1,15 +1,52 @@
 
 <?php
+/**
+ * Tadege Yilkal - Personal Portfolio
+ * Database/session initialization is handled by db.php.
+ */
+
+// =====================================================
+// DATABASE CONNECTION AND SESSION INITIALIZATION
+// =====================================================
+
 require_once __DIR__ . "/db.php";
 
-// Check administrator login
+// db.php must initialize the session successfully.
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    http_response_code(500);
+    exit("Session initialization failed.");
+}
+
+// Check administrator login.
 $isAdmin = !empty($_SESSION["admin"]);
 
-// Load only published CV documents
+// =====================================================
+// SAFE HTML OUTPUT
+// =====================================================
+
+if (!function_exists("e")) {
+    function e($value): string
+    {
+        return htmlspecialchars(
+            (string)($value ?? ""),
+            ENT_QUOTES,
+            "UTF-8"
+        );
+    }
+}
+
+// =====================================================
+// LOAD PUBLISHED CV DOCUMENTS
+// =====================================================
+
 $publicCvs = [];
 $cvError = false;
 
 try {
+    if (!isset($pdo) || !($pdo instanceof PDO)) {
+        throw new RuntimeException("Database connection is unavailable.");
+    }
+
     $stmt = $pdo->prepare(
         "SELECT id, original_name, uploaded_at
          FROM cv_uploads
@@ -18,26 +55,56 @@ try {
     );
 
     $stmt->execute();
+
     $publicCvs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-} catch (PDOException $e) {
+} catch (Throwable $e) {
     error_log("CV retrieval error: " . $e->getMessage());
     $cvError = true;
 }
 
-// Safe HTML output
-if (!function_exists("e")) {
-    function e($value) {
-        return htmlspecialchars(
-            (string)($value ?? ""),
-            ENT_QUOTES,
-            "UTF-8"
-        );
-    }
-}
+// =====================================================
+// SKILL GROUPS
+// =====================================================
+
+$skillGroups = [
+    "Frontend Development" => [
+        "HTML5 & Semantic Markup",
+        "CSS3 & Tailwind CSS",
+        "JavaScript (ES6+)",
+        "Responsive Web Design",
+        "Interactive UI/UX"
+    ],
+
+    "Backend & Databases" => [
+        "PHP Programming",
+        "Python & Flask",
+        "MySQL & PostgreSQL",
+        "Database Design",
+        "CRUD Operations & Security"
+    ],
+
+    "Python & Data Science" => [
+        "Python Programming",
+        "Pandas & Scikit-Learn",
+        "Seaborn & Matplotlib",
+        "K-Nearest Neighbors",
+        "Data Preprocessing"
+    ],
+
+    "Core CS & Systems" => [
+        "Data Structures & Algorithms",
+        "Operating Systems",
+        "8086 Assembly Language",
+        "UML Systems Architecture",
+        "Networking & Security Basics"
+    ]
+];
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -291,7 +358,9 @@ if (!function_exists("e")) {
 
 <body class="bg-slate-950 text-slate-100 antialiased">
 
-<!-- HEADER -->
+<!-- =====================================================
+     HEADER
+===================================================== -->
 
 <header class="fixed top-0 left-0 w-full z-50 separated-header">
 
@@ -300,11 +369,13 @@ if (!function_exists("e")) {
         <a href="#hero" class="flex items-center gap-3">
 
             <div class="relative">
+
                 <img src="download.jpg"
                      alt="Tadege Yilkal"
                      class="w-11 h-11 rounded-full object-cover border-2 border-indigo-400 header-avatar-ring">
 
                 <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-slate-950 rounded-full"></span>
+
             </div>
 
             <div class="text-xl font-extrabold tracking-tight">
@@ -331,14 +402,12 @@ if (!function_exists("e")) {
             </a>
 
             <?php if ($isAdmin): ?>
-
                 <a href="logout.php"
                    onclick="return confirm('Are you sure you want to logout?');"
                    class="hidden sm:flex logout-btn px-4 py-2.5 rounded-xl text-sm font-semibold items-center gap-2">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     Logout
                 </a>
-
             <?php endif; ?>
 
             <button id="menu-btn"
@@ -352,8 +421,6 @@ if (!function_exists("e")) {
         </div>
 
     </div>
-
-    <!-- MOBILE MENU -->
 
     <div id="mobile-menu"
          class="hidden md:hidden bg-slate-900/95 border-t border-indigo-500/20 px-6 py-5 space-y-4">
@@ -370,14 +437,12 @@ if (!function_exists("e")) {
         </a>
 
         <?php if ($isAdmin): ?>
-
             <a href="logout.php"
                onclick="return confirm('Are you sure you want to logout?');"
                class="block text-center logout-btn py-3 rounded-xl font-semibold">
                 <i class="fa-solid fa-right-from-bracket mr-2"></i>
                 Logout
             </a>
-
         <?php endif; ?>
 
     </div>
@@ -385,7 +450,9 @@ if (!function_exists("e")) {
 </header>
 
 
-<!-- HERO SECTION -->
+<!-- =====================================================
+     HERO SECTION
+===================================================== -->
 
 <section id="hero"
          class="min-h-screen flex items-center justify-center pt-32 pb-20 px-6 relative overflow-hidden">
@@ -467,7 +534,9 @@ if (!function_exists("e")) {
 </section>
 
 
-<!-- ABOUT SECTION -->
+<!-- =====================================================
+     ABOUT SECTION
+===================================================== -->
 
 <section id="about"
          class="py-24 px-6 bg-slate-900/40 border-t border-slate-800">
@@ -507,7 +576,7 @@ if (!function_exists("e")) {
 
                     <p class="text-slate-300 leading-relaxed">
                         I work with PHP, MySQL, JavaScript, HTML, CSS,
-                        and Python. I enjoy developing useful applications,
+                        Python, and Flask. I enjoy developing useful applications,
                         designing database structures, and solving technical
                         challenges through clean and organized code.
                     </p>
@@ -551,7 +620,9 @@ if (!function_exists("e")) {
 </section>
 
 
-<!-- SKILLS SECTION -->
+<!-- =====================================================
+     SKILLS SECTION
+===================================================== -->
 
 <section id="skills" class="py-24 px-6 border-t border-slate-800">
 
@@ -564,42 +635,6 @@ if (!function_exists("e")) {
         <p class="text-slate-400 text-center max-w-xl mx-auto mb-16">
             Technologies and tools I use to build software applications.
         </p>
-
-        <?php
-        $skillGroups = [
-            "Frontend Development" => [
-                "HTML5 & Semantic Markup",
-                "CSS3 & Tailwind CSS",
-                "JavaScript (ES6+)",
-                "Responsive Web Design",
-                "Interactive UI/UX"
-            ],
-
-            "Backend & Databases" => [
-                "PHP Programming",
-                "MySQL Database Design",
-                "Relational ER Diagrams",
-                "Apache / MAMP",
-                "CRUD Operations & Security"
-            ],
-
-            "Python & Data Science" => [
-                "Python Programming",
-                "Pandas & Scikit-Learn",
-                "Seaborn & Matplotlib",
-                "K-Nearest Neighbors",
-                "Data Preprocessing"
-            ],
-
-            "Core CS & Systems" => [
-                "Data Structures & Algorithms",
-                "Operating Systems",
-                "8086 Assembly Language",
-                "UML Systems Architecture",
-                "Networking & Security Basics"
-            ]
-        ];
-        ?>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
@@ -618,12 +653,10 @@ if (!function_exists("e")) {
                     <ul class="space-y-3 text-sm text-slate-300">
 
                         <?php foreach ($skills as $skill): ?>
-
                             <li class="flex items-start gap-2">
                                 <i class="fa-solid fa-check text-indigo-400 mt-1"></i>
                                 <span><?= e($skill) ?></span>
                             </li>
-
                         <?php endforeach; ?>
 
                     </ul>
@@ -639,7 +672,9 @@ if (!function_exists("e")) {
 </section>
 
 
-<!-- PROJECTS SECTION -->
+<!-- =====================================================
+     PROJECTS SECTION
+===================================================== -->
 
 <section id="projects"
          class="py-24 px-6 bg-slate-900/40 border-t border-slate-800">
@@ -675,7 +710,7 @@ if (!function_exists("e")) {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                <!-- PROJECT 1: TADEGEMARKET -->
+                <!-- TADEGEMARKET -->
 
                 <div class="glass-card rounded-2xl p-8">
 
@@ -722,16 +757,14 @@ if (!function_exists("e")) {
                        target="_blank"
                        rel="noopener noreferrer"
                        class="btn-rgb inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm w-full">
-
                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
                         Visit TadegeMarket
-
                     </a>
 
                 </div>
 
 
-                <!-- PROJECT 2: STUDENT INFORMATION MANAGEMENT SYSTEM -->
+                <!-- STUDENT INFORMATION MANAGEMENT SYSTEM -->
 
                 <div class="glass-card rounded-2xl p-8">
 
@@ -770,16 +803,14 @@ if (!function_exists("e")) {
                        target="_blank"
                        rel="noopener noreferrer"
                        class="btn-rgb inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm w-full">
-
                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
                         View Deployed Project
-
                     </a>
 
                 </div>
 
 
-                <!-- PROJECT 3: SCHOOL MANAGEMENT SYSTEM -->
+                <!-- SCHOOL MANAGEMENT SYSTEM -->
 
                 <div class="glass-card rounded-2xl p-8">
 
@@ -818,10 +849,8 @@ if (!function_exists("e")) {
                        target="_blank"
                        rel="noopener noreferrer"
                        class="btn-rgb inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm w-full">
-
                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
                         View Deployed Project
-
                     </a>
 
                 </div>
@@ -888,10 +917,8 @@ if (!function_exists("e")) {
                     <button type="button"
                             disabled
                             class="w-full bg-slate-800 text-slate-400 px-6 py-3 rounded-xl font-semibold text-sm cursor-not-allowed">
-
                         <i class="fa-solid fa-hourglass-half mr-2"></i>
                         Coming Soon
-
                     </button>
 
                 </div>
@@ -905,7 +932,9 @@ if (!function_exists("e")) {
 </section>
 
 
-<!-- CV SECTION -->
+<!-- =====================================================
+     CV SECTION
+===================================================== -->
 
 <section id="cv"
          class="py-24 px-6 border-t border-slate-800">
@@ -1026,7 +1055,9 @@ if (!function_exists("e")) {
 </section>
 
 
-<!-- CONTACT SECTION -->
+<!-- =====================================================
+     CONTACT SECTION
+===================================================== -->
 
 <section id="contact"
          class="py-24 px-6 bg-slate-900/40 border-t border-slate-800">
@@ -1113,6 +1144,7 @@ if (!function_exists("e")) {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                         <div>
+
                             <label for="contact-name"
                                    class="block text-xs text-slate-400 mb-2">
                                 Your Name
@@ -1125,9 +1157,11 @@ if (!function_exists("e")) {
                                    required
                                    autocomplete="name"
                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm">
+
                         </div>
 
                         <div>
+
                             <label for="contact-email"
                                    class="block text-xs text-slate-400 mb-2">
                                 Your Email
@@ -1140,11 +1174,13 @@ if (!function_exists("e")) {
                                    required
                                    autocomplete="email"
                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm">
+
                         </div>
 
                     </div>
 
                     <div>
+
                         <label for="contact-subject"
                                class="block text-xs text-slate-400 mb-2">
                             Subject
@@ -1156,9 +1192,11 @@ if (!function_exists("e")) {
                                maxlength="200"
                                required
                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm">
+
                     </div>
 
                     <div>
+
                         <label for="contact-message"
                                class="block text-xs text-slate-400 mb-2">
                             Message
@@ -1171,14 +1209,13 @@ if (!function_exists("e")) {
                                   required
                                   placeholder="Write your message here..."
                                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm"></textarea>
+
                     </div>
 
                     <button type="submit"
                             class="w-full btn-rgb font-bold py-3.5 rounded-xl">
-
                         <i class="fa-solid fa-paper-plane mr-2"></i>
                         Send Message
-
                     </button>
 
                     <p id="contactStatus"
@@ -1196,7 +1233,9 @@ if (!function_exists("e")) {
 </section>
 
 
-<!-- FOOTER -->
+<!-- =====================================================
+     FOOTER
+===================================================== -->
 
 <footer class="py-10 px-6 border-t border-slate-800 text-center">
 
@@ -1248,11 +1287,16 @@ if (!function_exists("e")) {
 </footer>
 
 
-<!-- JAVASCRIPT -->
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
 
 <script>
+"use strict";
 
+// =====================================================
 // MOBILE NAVIGATION
+// =====================================================
 
 const menuBtn = document.getElementById("menu-btn");
 const mobileMenu = document.getElementById("mobile-menu");
@@ -1291,7 +1335,9 @@ if (menuBtn && mobileMenu && menuIcon) {
 }
 
 
-// CONTACT FORM
+// =====================================================
+// CONTACT FORM AJAX SUBMISSION
+// =====================================================
 
 const contactForm = document.getElementById("contactForm");
 const contactStatus = document.getElementById("contactStatus");
@@ -1304,7 +1350,9 @@ if (contactForm && contactStatus) {
 
         const button = contactForm.querySelector('button[type="submit"]');
 
-        if (!button) return;
+        if (!button) {
+            return;
+        }
 
         button.disabled = true;
 
@@ -1315,28 +1363,37 @@ if (contactForm && contactStatus) {
 
         try {
 
-            const response = await fetch("send_message.php", {
+            const response = await fetch(contactForm.action, {
+
                 method: "POST",
+
                 body: new FormData(contactForm),
+
                 headers: {
                     "Accept": "application/json"
                 }
+
             });
 
             let result;
 
             try {
+
                 result = await response.json();
+
             } catch (jsonError) {
+
                 throw new Error(
                     "The server returned an invalid response. Check send_message.php."
                 );
+
             }
 
             if (!response.ok || !result.ok) {
 
                 throw new Error(
-                    result.error || "Message could not be sent. Please try again."
+                    result.error ||
+                    "Message could not be sent. Please try again."
                 );
 
             }
@@ -1371,7 +1428,6 @@ if (contactForm && contactStatus) {
     });
 
 }
-
 </script>
 
 </body>
