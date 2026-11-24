@@ -215,6 +215,7 @@ $skillGroups = [
 
         .logout-btn:hover {
             background: #b91c1c;
+            
             transform: translateY(-2px);
         }
 
