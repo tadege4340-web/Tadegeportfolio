@@ -2,9 +2,7 @@
 <?php
 /**
  * Tadege Yilkal Portfolio
- * Database connection for MAMP and Render.
- * Local database: MAMP MySQL
- * Online database: Aiven MySQL
+ * MAMP + Render + Aiven MySQL
  */
 
 // =====================================================
@@ -29,36 +27,39 @@ if (session_status() === PHP_SESSION_DISABLED) {
 
 if (session_status() === PHP_SESSION_NONE) {
 
-    if (headers_sent($sentFile, $sentLine)) {
-        error_log(
-            "SESSION ERROR: Output started in {$sentFile} on line {$sentLine}."
-        );
+    if (headers_sent($file, $line)) {
+        error_log("SESSION ERROR: Headers already sent in {$file}:{$line}");
 
         http_response_code(500);
         exit("Session initialization failed. Check PHP error logs.");
     }
 
-    // Use PHP's temporary directory.
     $sessionPath = sys_get_temp_dir();
 
     if (!is_dir($sessionPath) || !is_writable($sessionPath)) {
-        error_log(
-            "SESSION ERROR: Session directory is unavailable: " . $sessionPath
-        );
+        error_log("SESSION ERROR: Invalid or unwritable session path: " . $sessionPath);
 
         http_response_code(500);
         exit("Session storage directory is unavailable.");
     }
 
-    // Configure session storage.
-    if (!session_save_path($sessionPath)) {
-        error_log("SESSION ERROR: Could not configure session storage.");
+    // IMPORTANT: session_save_path() returns the OLD path.
+    // Therefore, check the current path after setting it.
+
+    $previousPath = session_save_path($sessionPath);
+
+    if (session_save_path() !== $sessionPath) {
+        error_log(
+            "SESSION ERROR: Failed to configure session path. " .
+            "Previous path: " . $previousPath .
+            ", Current path: " . session_save_path()
+        );
 
         http_response_code(500);
         exit("Session storage configuration failed.");
     }
 
-    // Detect HTTPS, including Render's reverse proxy.
+    // Detect HTTPS, including Render reverse proxy.
     $isHttps = (
         (!empty($_SERVER["HTTPS"]) &&
         strtolower((string) $_SERVER["HTTPS"]) !== "off")
@@ -69,7 +70,6 @@ if (session_status() === PHP_SESSION_NONE) {
         )
     );
 
-    // Secure session configuration.
     ini_set("session.use_only_cookies", "1");
     ini_set("session.use_strict_mode", "1");
     ini_set("session.use_trans_sid", "0");
@@ -82,12 +82,13 @@ if (session_status() === PHP_SESSION_NONE) {
         "samesite" => "Lax"
     ]);
 
-    // Start session.
     if (!session_start()) {
         $lastError = error_get_last();
 
         error_log(
             "SESSION ERROR: session_start() failed. " .
+            "Path: " . session_save_path() .
+            ". PHP error: " .
             ($lastError["message"] ?? "Unknown error")
         );
 
@@ -106,7 +107,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 // =====================================================
-// 3. ENVIRONMENT VARIABLE HELPER
+// 3. ENVIRONMENT HELPER
 // =====================================================
 
 if (!function_exists("env_or")) {
@@ -135,13 +136,13 @@ $username = env_or("DB_USER", "root");
 $password = env_or("DB_PASSWORD", "root");
 
 // =====================================================
-// 5. PDO CONNECTION
+// 5. DATABASE CONNECTION
 // =====================================================
 
 try {
 
     if (!extension_loaded("pdo_mysql")) {
-        throw new RuntimeException("PDO MySQL extension is not installed.");
+        throw new RuntimeException("PDO MySQL extension is unavailable.");
     }
 
     $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
@@ -153,24 +154,17 @@ try {
         PDO::ATTR_TIMEOUT => 10
     ];
 
-    // =================================================
-    // 6. AIVEN SSL CONFIGURATION
-    // =================================================
-
+    // Aiven SSL
     if ($isOnline) {
 
         $caFile = __DIR__ . "/ca.pem";
 
         if (!is_file($caFile) || !is_readable($caFile)) {
-            throw new RuntimeException(
-                "Aiven SSL certificate is missing or unreadable."
-            );
+            throw new RuntimeException("Aiven SSL certificate is missing or unreadable.");
         }
 
         if (!defined("PDO::MYSQL_ATTR_SSL_CA")) {
-            throw new RuntimeException(
-                "PDO MySQL SSL support is unavailable."
-            );
+            throw new RuntimeException("PDO MySQL SSL support is unavailable.");
         }
 
         $options[constant("PDO::MYSQL_ATTR_SSL_CA")] = $caFile;
@@ -179,10 +173,6 @@ try {
             $options[constant("PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT")] = true;
         }
     }
-
-    // =================================================
-    // 7. CONNECT TO MYSQL
-    // =================================================
 
     $pdo = new PDO(
         $dsn,
@@ -198,5 +188,5 @@ try {
     error_log("DATABASE ERROR: " . $e->getMessage());
 
     http_response_code(500);
-    exit("Database connection failed. Please check your server configuration.");
+    exit("Database connection failed. Please check server configuration.");
 }
